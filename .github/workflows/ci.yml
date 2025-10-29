@@ -4,14 +4,8 @@ on:
   push:
     branches: ["develop", "ci/*", "v*"]
     tags: ["v*"]
-    paths: ["src/GZCTF/**"]
+    paths: ["src/**"]
   workflow_dispatch:
-    inputs:
-      skip-build:
-        type: boolean
-        description: "Skip build step"
-        default: false
-        required: false
 
 env:
   # latest tag is only created for `v*.*.*` or `v*.*.*-patch.*` tags
@@ -19,8 +13,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    if: ${{ !github.event.inputs.skip-build }}
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -29,13 +22,13 @@ jobs:
         working-directory: src/GZCTF
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           global-json-file: src/global.json
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: latest
 
@@ -128,7 +121,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           package: gzctf/gzctf
           use-regex: true
-          exclude-tags: "^latest$|^develop$|v\\d+(\\.\\d+){0,2}"
+          exclude-tags: "^latest$|^develop$|v\\d+(\\.\\d+){0,2}|^work$"
           validate: true
           dry-run: false
           delete-untagged: true

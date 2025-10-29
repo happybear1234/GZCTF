@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Localization;
 using Org.BouncyCastle.Crypto.Parameters;
 
@@ -27,6 +26,8 @@ public partial class TeamController(
     IParticipationRepository participationRepository,
     IStringLocalizer<Program> localizer) : ControllerBase
 {
+    const int MaxTeamsAllowed = 3;
+
     /// <summary>
     /// Get team information
     /// </summary>
@@ -42,7 +43,7 @@ public partial class TeamController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetBasicInfo(int id, CancellationToken token)
     {
-        Team? team = await teamRepository.GetTeamById(id, token);
+        var team = await teamRepository.GetTeamById(id, token);
 
         if (team is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Team_NotFound)],
@@ -66,7 +67,7 @@ public partial class TeamController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetTeamsInfo(CancellationToken token)
     {
-        UserInfo? user = await userManager.GetUserAsync(User);
+        var user = await userManager.GetUserAsync(User);
 
         return Ok((await teamRepository.GetUserTeams(user!, token)).Select(t => TeamInfoModel.FromTeam(t)));
     }
@@ -90,13 +91,13 @@ public partial class TeamController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateTeam([FromBody] TeamUpdateModel model, CancellationToken token)
     {
-        UserInfo? user = await userManager.GetUserAsync(User);
+        var user = await userManager.GetUserAsync(User);
 
-        Team[] teams = await teamRepository.GetUserTeams(user!, token);
+        var teams = await teamRepository.GetUserTeams(user!, token);
 
-        if (teams.Any(t => t.CaptainId == user!.Id))
+        if (teams.Count(t => t.CaptainId == user!.Id) >= MaxTeamsAllowed)
             return BadRequest(
-                new RequestResponse(localizer[nameof(Resources.Program.Team_MultipleCreationNotAllowed)]));
+                new RequestResponse(localizer[nameof(Resources.Program.Team_ExceededCreationLimit)]));
 
         if (string.IsNullOrEmpty(model.Name))
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_NameEmpty)]));
@@ -104,11 +105,11 @@ public partial class TeamController(
         if (model.Name is null)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_CreationFailed)]));
 
-        Team team = await teamRepository.CreateTeam(model, user!, token);
+        var team = await teamRepository.CreateTeam(model, user!, token);
 
         await userManager.UpdateAsync(user!);
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Team_Created), team.Name], user,
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Team_Created), team.Name], user,
             TaskStatus.Success);
 
         return Ok(TeamInfoModel.FromTeam(team));
@@ -136,16 +137,15 @@ public partial class TeamController(
     public async Task<IActionResult> UpdateTeam([FromRoute] int id, [FromBody] TeamUpdateModel model,
         CancellationToken token)
     {
-        UserInfo? user = await userManager.GetUserAsync(User);
-        Team? team = await teamRepository.GetTeamById(id, token);
+        var user = await userManager.GetUserAsync(User);
+        var team = await teamRepository.GetTeamById(id, token);
 
         if (team is null)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_NotFound)]));
 
         if (team.CaptainId != user!.Id)
-            return new JsonResult(new RequestResponse(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
-                StatusCodes.Status403Forbidden))
-            { StatusCode = StatusCodes.Status403Forbidden };
+            return RequestResponse.Result(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
+                StatusCodes.Status403Forbidden);
 
         team.UpdateInfo(model);
 
@@ -176,30 +176,29 @@ public partial class TeamController(
     public async Task<IActionResult> Transfer([FromRoute] int id, [FromBody] TeamTransferModel model,
         CancellationToken token)
     {
-        UserInfo? user = await userManager.GetUserAsync(User);
+        var user = await userManager.GetUserAsync(User);
 
-        IDbContextTransaction trans = await teamRepository.BeginTransactionAsync(token);
+        var trans = await teamRepository.BeginTransactionAsync(token);
 
         try
         {
-            Team? team = await teamRepository.GetTeamById(id, token);
+            var team = await teamRepository.GetTeamById(id, token);
 
             if (team is null)
                 return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_NotFound)]));
 
             if (team.CaptainId != user!.Id)
-                return new JsonResult(new RequestResponse(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
-                    StatusCodes.Status403Forbidden))
-                { StatusCode = StatusCodes.Status403Forbidden };
+                return RequestResponse.Result(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
+                    StatusCodes.Status403Forbidden);
 
-            UserInfo? newCaptain = await userManager.Users.SingleOrDefaultAsync(u => u.Id == model.NewCaptainId, token);
+            var newCaptain = await userManager.Users.SingleOrDefaultAsync(u => u.Id == model.NewCaptainId, token);
 
             if (newCaptain is null)
                 return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_NewCaptainNotFound)]));
 
-            Team[] newCaptainTeams = await teamRepository.GetUserTeams(newCaptain, token);
+            var newCaptainTeams = await teamRepository.GetUserTeams(newCaptain, token);
 
-            if (newCaptainTeams.Count(t => t.CaptainId == newCaptain.Id) >= 3)
+            if (newCaptainTeams.Count(t => t.CaptainId == newCaptain.Id) >= MaxTeamsAllowed)
                 return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_NewCaptainTeamTooMany)]));
 
             await teamRepository.Transfer(team, newCaptain, token);
@@ -234,16 +233,15 @@ public partial class TeamController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> InviteCode([FromRoute] int id, CancellationToken token)
     {
-        UserInfo? user = await userManager.GetUserAsync(User);
-        Team? team = await teamRepository.GetTeamById(id, token);
+        var user = await userManager.GetUserAsync(User);
+        var team = await teamRepository.GetTeamById(id, token);
 
         if (team is null)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_NotFound)]));
 
         if (team.CaptainId != user!.Id)
-            return new JsonResult(new RequestResponse(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
-                StatusCodes.Status403Forbidden))
-            { StatusCode = StatusCodes.Status403Forbidden };
+            return RequestResponse.Result(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
+                StatusCodes.Status403Forbidden);
 
         return Ok(team.InviteCode);
     }
@@ -268,16 +266,15 @@ public partial class TeamController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateInviteToken([FromRoute] int id, CancellationToken token)
     {
-        UserInfo? user = await userManager.GetUserAsync(User);
-        Team? team = await teamRepository.GetTeamById(id, token);
+        var user = await userManager.GetUserAsync(User);
+        var team = await teamRepository.GetTeamById(id, token);
 
         if (team is null)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_NotFound)]));
 
         if (team.CaptainId != user!.Id)
-            return new JsonResult(new RequestResponse(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
-                StatusCodes.Status403Forbidden))
-            { StatusCode = StatusCodes.Status403Forbidden };
+            return RequestResponse.Result(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
+                StatusCodes.Status403Forbidden);
 
         team.UpdateInviteToken();
 
@@ -307,26 +304,25 @@ public partial class TeamController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> KickUser([FromRoute] int id, [FromRoute] Guid userId, CancellationToken token)
     {
-        UserInfo? user = await userManager.GetUserAsync(User);
+        var user = await userManager.GetUserAsync(User);
 
-        IDbContextTransaction trans = await teamRepository.BeginTransactionAsync(token);
+        var trans = await teamRepository.BeginTransactionAsync(token);
 
         try
         {
-            Team? team = await teamRepository.GetTeamById(id, token);
+            var team = await teamRepository.GetTeamById(id, token);
 
             if (team is null)
                 return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_NotFound)]));
 
             if (team.CaptainId != user!.Id)
-                return new JsonResult(new RequestResponse(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
-                    StatusCodes.Status403Forbidden))
-                { StatusCode = StatusCodes.Status403Forbidden };
+                return RequestResponse.Result(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
+                    StatusCodes.Status403Forbidden);
 
             if (team.Locked && await teamRepository.AnyActiveGame(team, token))
                 return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_Locked)]));
 
-            UserInfo? kickUser = team.Members.SingleOrDefault(m => m.Id == userId);
+            var kickUser = team.Members.SingleOrDefault(m => m.Id == userId);
             if (kickUser is null)
                 return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.User_NotInTeam)]));
 
@@ -337,7 +333,7 @@ public partial class TeamController(
             await trans.CommitAsync(token);
 
             logger.Log(
-                Program.StaticLocalizer[nameof(Resources.Program.Team_MemberRemoved), team.Name,
+                StaticLocalizer[nameof(Resources.Program.Team_MemberRemoved), team.Name,
                     kickUser.UserName ?? "null"], user,
                 TaskStatus.Success);
             return Ok(TeamInfoModel.FromTeam(team));
@@ -385,11 +381,11 @@ public partial class TeamController(
                 preCode[(lastColon + 1)..]]));
 
         var teamName = preCode[..lastColon];
-        IDbContextTransaction trans = await teamRepository.BeginTransactionAsync(cancelToken);
+        var trans = await teamRepository.BeginTransactionAsync(cancelToken);
 
         try
         {
-            Team? team = await teamRepository.GetTeamById(teamId, cancelToken);
+            var team = await teamRepository.GetTeamById(teamId, cancelToken);
 
             if (team is null)
                 return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_NameNotFound),
@@ -399,7 +395,7 @@ public partial class TeamController(
                 return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_NameInvalidInvitation),
                     teamName]));
 
-            UserInfo? user = await userManager.GetUserAsync(User);
+            var user = await userManager.GetUserAsync(User);
 
             if (team.Members.Any(m => m.Id == user!.Id))
                 return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.User_AlreadyInTeam)]));
@@ -409,7 +405,7 @@ public partial class TeamController(
             await teamRepository.SaveAsync(cancelToken);
             await trans.CommitAsync(cancelToken);
 
-            logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Team_UserJoined), team.Name], user,
+            logger.Log(StaticLocalizer[nameof(Resources.Program.Team_UserJoined), team.Name], user,
                 TaskStatus.Success);
             return Ok();
         }
@@ -440,17 +436,17 @@ public partial class TeamController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Leave([FromRoute] int id, CancellationToken token)
     {
-        IDbContextTransaction trans = await teamRepository.BeginTransactionAsync(token);
+        var trans = await teamRepository.BeginTransactionAsync(token);
 
         try
         {
-            Team? team = await teamRepository.GetTeamById(id, token);
+            var team = await teamRepository.GetTeamById(id, token);
 
             if (team is null)
                 return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Team_NotFound)],
                     StatusCodes.Status404NotFound));
 
-            UserInfo? user = await userManager.GetUserAsync(User);
+            var user = await userManager.GetUserAsync(User);
 
             if (team.Members.All(m => m.Id != user!.Id))
                 return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.User_LeaveNotInTeam)]));
@@ -464,7 +460,7 @@ public partial class TeamController(
             await teamRepository.SaveAsync(token);
             await trans.CommitAsync(token);
 
-            logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Team_UserLeft), team.Name], user,
+            logger.Log(StaticLocalizer[nameof(Resources.Program.Team_UserLeft), team.Name], user,
                 TaskStatus.Success);
             return Ok();
         }
@@ -492,17 +488,16 @@ public partial class TeamController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Avatar([FromRoute] int id, IFormFile file, CancellationToken token)
     {
-        UserInfo? user = await userManager.GetUserAsync(User);
-        Team? team = await teamRepository.GetTeamById(id, token);
+        var user = await userManager.GetUserAsync(User);
+        var team = await teamRepository.GetTeamById(id, token);
 
         if (team is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Team_NotFound)],
                 StatusCodes.Status404NotFound));
 
         if (team.CaptainId != user!.Id)
-            return new JsonResult(new RequestResponse(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
-                StatusCodes.Status403Forbidden))
-            { StatusCode = StatusCodes.Status403Forbidden };
+            return RequestResponse.Result(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
+                StatusCodes.Status403Forbidden);
 
         switch (file.Length)
         {
@@ -515,7 +510,7 @@ public partial class TeamController(
         if (team.AvatarHash is not null)
             _ = await blobService.DeleteBlobByHash(team.AvatarHash, token);
 
-        LocalFile? avatar = await blobService.CreateOrUpdateImage(file, "avatar", 300, token);
+        var avatar = await blobService.CreateOrUpdateImage(file, "avatar", 300, token);
 
         if (avatar is null)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_AvatarUpdateFailed)]));
@@ -523,7 +518,7 @@ public partial class TeamController(
         team.AvatarHash = avatar.Hash;
         await teamRepository.SaveAsync(token);
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Team_AvatarUpdated), team.Name, avatar.Hash[..8]],
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Team_AvatarUpdated), team.Name, avatar.Hash[..8]],
             user, TaskStatus.Success);
 
         return Ok(avatar.Url());
@@ -547,24 +542,23 @@ public partial class TeamController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> DeleteTeam(int id, CancellationToken token)
     {
-        UserInfo? user = await userManager.GetUserAsync(User);
-        Team? team = await teamRepository.GetTeamById(id, token);
+        var user = await userManager.GetUserAsync(User);
+        var team = await teamRepository.GetTeamById(id, token);
 
         if (team is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Team_NotFound)],
                 StatusCodes.Status404NotFound));
 
         if (team.CaptainId != user!.Id)
-            return new JsonResult(new RequestResponse(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
-                StatusCodes.Status403Forbidden))
-            { StatusCode = StatusCodes.Status403Forbidden };
+            return RequestResponse.Result(localizer[nameof(Resources.Program.Auth_AccessForbidden)],
+                StatusCodes.Status403Forbidden);
 
         if (team.Locked && await teamRepository.AnyActiveGame(team, token))
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Team_Locked)]));
 
         await teamRepository.DeleteTeam(team, token);
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Team_Deleted), team.Name], user,
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Team_Deleted), team.Name], user,
             TaskStatus.Success);
 
         return Ok();
@@ -606,7 +600,7 @@ public partial class TeamController(
 
         Ed25519PublicKeyParameters publicKey = new(pk, 0);
 
-        if (DigitalSignature.VerifySignature($"GZCTF_TEAM_{id}", sign, publicKey, SignAlgorithm.Ed25519))
+        if (CryptoUtils.VerifySignature($"GZCTF_TEAM_{id}", sign, publicKey, SignAlgorithm.Ed25519))
             return Ok();
 
         return Unauthorized(new RequestResponse(localizer[nameof(Resources.Program.Signature_Invalid)]));

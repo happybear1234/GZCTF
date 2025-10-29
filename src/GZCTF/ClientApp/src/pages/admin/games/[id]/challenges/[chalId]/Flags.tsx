@@ -31,7 +31,7 @@ import { AttachmentUploadModal } from '@Components/admin/AttachmentUploadModal'
 import { FlagCreateModal } from '@Components/admin/FlagCreateModal'
 import { FlagEditPanel } from '@Components/admin/FlagEditPanel'
 import { WithChallengeEdit } from '@Components/admin/WithChallengeEdit'
-import { showErrorNotification } from '@Utils/ApiHelper'
+import { showErrorMsg } from '@Utils/Shared'
 import { useDisplayInputStyles } from '@Utils/ThemeOverride'
 import { useEditChallenge } from '@Hooks/useEdit'
 import api, { ChallengeType, FileType, FlagInfoModel } from '@Api'
@@ -84,7 +84,7 @@ const OneAttachmentWithFlags: FC<FlagEditProps> = ({ onDelete }) => {
         })
       }
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
@@ -119,7 +119,7 @@ const OneAttachmentWithFlags: FC<FlagEditProps> = ({ onDelete }) => {
       )
       const remoteFile = res.data[0]
       setProgress(95)
-      if (file) {
+      if (remoteFile) {
         await api.edit.editUpdateAttachment(numId, numCId, {
           attachmentType: FileType.Local,
           fileHash: remoteFile.hash,
@@ -134,7 +134,7 @@ const OneAttachmentWithFlags: FC<FlagEditProps> = ({ onDelete }) => {
         })
       }
     } catch (err) {
-      showErrorNotification(err, t)
+      showErrorMsg(err, t)
     } finally {
       setDisabled(false)
     }
@@ -155,7 +155,7 @@ const OneAttachmentWithFlags: FC<FlagEditProps> = ({ onDelete }) => {
         icon: <Icon path={mdiCheck} size={1} />,
       })
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
@@ -180,7 +180,7 @@ const OneAttachmentWithFlags: FC<FlagEditProps> = ({ onDelete }) => {
         })
       }
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
@@ -190,7 +190,7 @@ const OneAttachmentWithFlags: FC<FlagEditProps> = ({ onDelete }) => {
 
   return (
     <Stack>
-      <Group justify="space-between">
+      <Group justify="space-between" wrap="nowrap" mt="md">
         <Title order={2}>{t('admin.content.games.challenges.attachment.title')}</Title>
         {type !== FileType.Remote ? (
           <FileButton onChange={onUpload}>
@@ -201,7 +201,6 @@ const OneAttachmentWithFlags: FC<FlagEditProps> = ({ onDelete }) => {
                 className={uploadClasses.button}
                 disabled={type !== FileType.Local}
                 w="122px"
-                mt="24px"
                 color={progress !== 0 ? 'cyan' : theme.primaryColor}
               >
                 <div className={uploadClasses.label}>
@@ -221,7 +220,7 @@ const OneAttachmentWithFlags: FC<FlagEditProps> = ({ onDelete }) => {
             )}
           </FileButton>
         ) : (
-          <Button disabled={disabled} w="122px" mt="24px" onClick={onRemote}>
+          <Button disabled={disabled} w="122px" onClick={onRemote}>
             {t('admin.button.challenges.attachment.save_url')}
           </Button>
         )}
@@ -274,7 +273,7 @@ const OneAttachmentWithFlags: FC<FlagEditProps> = ({ onDelete }) => {
           />
         )}
       </Group>
-      <Group justify="space-between" mt={20}>
+      <Group justify="space-between" mt="md">
         <Title order={2}>{t('admin.content.games.challenges.flag.title')}</Title>
         {challenge?.type === ChallengeType.DynamicContainer ? (
           <Button disabled={disabled} onClick={onChangeFlagTemplate}>
@@ -297,39 +296,43 @@ const OneAttachmentWithFlags: FC<FlagEditProps> = ({ onDelete }) => {
             onChange={(e) => setFlagTemplate(e.target.value)}
             classNames={{ input: misc.ffmono }}
           />
-          <Stack gap={6} pb={8}>
-            <Text size="sm">{t('admin.content.games.challenges.flag.instructions.description')}</Text>
-            <Text size="sm">
-              <Trans i18nKey="admin.content.games.challenges.flag.instructions.guid">
-                _<Code>_</Code>_
-              </Trans>
+          <Stack mah="400px" gap={2} pb={8}>
+            <Text size="md" fw="bold">
+              {t('admin.content.games.challenges.flag.instructions.description')}
             </Text>
-            <Text size="sm">
-              <Trans i18nKey="admin.content.games.challenges.flag.instructions.team_hash">
-                _<Code>_</Code>_
-              </Trans>
-            </Text>
-            <Text size="sm">
-              <Trans i18nKey="admin.content.games.challenges.flag.instructions.leet">
-                _<Code>_</Code>_
-              </Trans>
-            </Text>
-            <Text size="sm">
-              <Trans i18nKey="admin.content.games.challenges.flag.instructions.both">
-                _<Code>_</Code>
-                <Code>_</Code>_
-              </Trans>
-            </Text>
-            <Text size="sm">
-              <Trans i18nKey="admin.content.games.challenges.flag.instructions.complex">
-                _<Code>_</Code>
-                <Code>_</Code>_
-              </Trans>
-            </Text>
-            <Text size="sm" fw="bold">
+            <List size="sm" spacing={2}>
+              <List.Item>
+                <Trans i18nKey="admin.content.games.challenges.flag.instructions.guid">
+                  _<Code>_</Code>_
+                </Trans>
+              </List.Item>
+              <List.Item>
+                <Trans i18nKey="admin.content.games.challenges.flag.instructions.team_hash">
+                  _<Code>_</Code>_
+                </Trans>
+              </List.Item>
+              <List.Item>
+                <Trans i18nKey="admin.content.games.challenges.flag.instructions.leet">
+                  _<Code>_</Code>_
+                </Trans>
+              </List.Item>
+              <List.Item>
+                <Trans i18nKey="admin.content.games.challenges.flag.instructions.both">
+                  _<Code>_</Code>
+                  <Code>_</Code>_
+                </Trans>
+              </List.Item>
+              <List.Item>
+                <Trans i18nKey="admin.content.games.challenges.flag.instructions.complex">
+                  _<Code>_</Code>
+                  <Code>_</Code>_
+                </Trans>
+              </List.Item>
+            </List>
+            <Text size="md" fw="bold">
               {t('admin.content.games.challenges.flag.instructions.example')}
             </Text>
-            <List size="sm" spacing={6}>
+            <List size="sm" spacing={2}>
               <List.Item>
                 {t('admin.content.games.challenges.flag.instructions.leave_empty')}
                 {willGenerate}
@@ -396,7 +399,7 @@ const FlagsWithAttachments: FC<FlagEditProps> = ({ onDelete }) => {
 
   return (
     <Stack>
-      <Group justify="space-between" mt={20}>
+      <Group justify="space-between" mt="md">
         <Title order={2}>{t('admin.content.games.challenges.flag.title')}</Title>
         <Group justify="right">
           <Button onClick={() => setRemoteAttachmentModalOpened(true)}>
@@ -477,7 +480,7 @@ const GameChallengeEdit: FC = () => {
         })
       }
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     }
   }
 

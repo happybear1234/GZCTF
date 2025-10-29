@@ -50,16 +50,15 @@ public class Challenge
     public bool IsEnabled { get; set; }
 
     /// <summary>
-    /// Number of people who solved the challenge
+    /// The deadline of the challenge, null means no deadline
     /// </summary>
-    [Required]
-    public int AcceptedCount { get; set; }
+    public DateTimeOffset? DeadlineUtc { get; set; } = null;
 
     /// <summary>
-    /// Number of submissions
+    /// Maximum number of submissions allowed per team (0 = no limit)
     /// </summary>
     [Required]
-    public int SubmissionCount { get; set; }
+    public int SubmissionLimit { get; set; }
 
     /// <summary>
     /// Image name and tag
@@ -92,46 +91,17 @@ public class Challenge
     public string? FileName { get; set; } = "attachment";
 
     /// <summary>
-    /// Concurrency check
+    /// Concurrency token
     /// </summary>
     [JsonIgnore]
-    [ConcurrencyCheck]
-    public Guid ConcurrencyStamp { get; set; }
+    [Timestamp]
+    public uint ConcurrencyToken { get; set; }
 
     /// <summary>
     /// Flag template, used to generate flags based on token and challenge, game information
     /// </summary>
     [MaxLength(Limits.MaxFlagTemplateLength)]
     public string? FlagTemplate { get; set; }
-
-    #region Db Relationship
-
-    /// <summary>
-    /// Challenge attachment ID
-    /// </summary>
-    public int? AttachmentId { get; set; }
-
-    /// <summary>
-    /// Challenge attachment (dynamic attachments are stored in FlagContext)
-    /// </summary>
-    public Attachment? Attachment { get; set; }
-
-    /// <summary>
-    /// Test container ID
-    /// </summary>
-    public Guid? TestContainerId { get; set; }
-
-    /// <summary>
-    /// Test container
-    /// </summary>
-    public Container? TestContainer { get; set; }
-
-    /// <summary>
-    /// List of flags for the challenge
-    /// </summary>
-    public List<FlagContext> Flags { get; set; } = [];
-
-    #endregion
 
     /// <summary>
     /// Generate dynamic flag for the participant
@@ -196,6 +166,9 @@ public class Challenge
         return flag.Replace("[TEAM_HASH]", guid.ToString("N")[..12]);
     }
 
+    /// <summary>
+    /// Generate test flag for admin to check the challenge
+    /// </summary>
     internal string GenerateTestFlag()
     {
         if (string.IsNullOrEmpty(FlagTemplate))
@@ -203,6 +176,9 @@ public class Challenge
 
         if (FlagTemplate.Contains("[GUID]"))
             return FlagTemplate.Replace("[GUID]", Guid.NewGuid().ToString("D"));
+
+        if (!FlagTemplate.Contains("[TEAM_HASH]"))
+            return Codec.Leet.LeetFlag(FlagTemplate);
 
         var flag = FlagTemplate;
         if (FlagTemplate.StartsWith("[LEET]"))
@@ -213,4 +189,33 @@ public class Challenge
 
         return flag.Replace("[TEAM_HASH]", "TestTeamHash");
     }
+
+    #region Db Relationship
+
+    /// <summary>
+    /// Challenge attachment ID
+    /// </summary>
+    public int? AttachmentId { get; set; }
+
+    /// <summary>
+    /// Challenge attachment (dynamic attachments are stored in FlagContext)
+    /// </summary>
+    public Attachment? Attachment { get; set; }
+
+    /// <summary>
+    /// Test container ID
+    /// </summary>
+    public Guid? TestContainerId { get; set; }
+
+    /// <summary>
+    /// Test container
+    /// </summary>
+    public Container? TestContainer { get; set; }
+
+    /// <summary>
+    /// List of flags for the challenge
+    /// </summary>
+    public List<FlagContext> Flags { get; set; } = [];
+
+    #endregion
 }

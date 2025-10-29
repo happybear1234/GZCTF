@@ -133,7 +133,7 @@ const Logs: FC = () => {
         }
       >
         <Table.Td>
-          <Badge size="sm" color="indigo">
+          <Badge size="sm" color="indigo" fullWidth>
             {dayjs(item.time).locale(locale).format('SL HH:mm:ss')}
           </Badge>
         </Table.Td>
@@ -200,7 +200,7 @@ const Logs: FC = () => {
                 <Table.Th w="12%">{t('common.label.ip')}</Table.Th>
                 <Table.Th w="6rem">{t('common.label.user')}</Table.Th>
                 <Table.Th>{t('admin.label.logs.message')}</Table.Th>
-                <Table.Th w="5rem">{t('admin.label.logs.status')}</Table.Th>
+                <Table.Th w="6rem">{t('admin.label.logs.status')}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>{rows}</Table.Tbody>

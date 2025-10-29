@@ -11,7 +11,11 @@
     "instance": {
       "create": "创建实例",
       "destroy": "销毁实例",
-      "extend": "延长时间"
+      "extend": "延长时间",
+      "show": {
+        "original": "显示原始链接",
+        "proxied": "显示本地映射"
+      }
     },
     "submit_flag": "提交 flag"
   },
@@ -32,6 +36,17 @@
   },
   "content": {
     "already_solved": "该题目已被解出",
+    "attempts": {
+      "count": "已经尝试提交 {{count}} 次",
+      "exhausted": "哎呀，所有机会都用完了",
+      "placeholder": "已达到提交上限",
+      "remaining": "还有 {{remaining}} 次提交机会"
+    },
+    "deadline": {
+      "expired": "该题已于 {{deadline}} 截止，无法继续提交",
+      "label": "截止时间",
+      "remaining": "剩余时间"
+    },
     "flag_placeholders": [
       "横看成岭侧成峰，flag 高低各不同",
       "flag 当关，万夫莫开",

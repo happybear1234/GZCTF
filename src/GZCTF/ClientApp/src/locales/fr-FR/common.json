@@ -8,6 +8,7 @@
   "button": {
     "copy": "Copier dans le presse-papier",
     "reset": "Réinitialiser",
+    "retry": "Recommencer",
     "select_file": "Sélectionner un fichier",
     "try_again": "Réessayer",
     "uploading": "Téléchargement en cours"
@@ -18,7 +19,12 @@
       "title": "Page inexistante"
     },
     "about": {
-      "slogan": "Hack for fun not for profit"
+      "contributors": "Contributeurs",
+      "documentation": "Documentation Officielle",
+      "repository": "Dépôt GitHub",
+      "resources": "Ressources",
+      "slogan": "Hack for fun not for profit",
+      "version": "Version"
     },
     "color": {
       "custom": {
@@ -73,6 +79,11 @@
     "check_input": "Veuillez vérifier votre saisie",
     "empty": "Le contenu ne peut pas être vide",
     "encountered": "Une erreur s'est produite",
+    "encryption_failed": {
+      "need_upgrade": "Veuillez mettre à jour vers Chrome 133+ / Firefox 130+ / Safari 17+ et réessayer",
+      "not_secure_contexts": "Veuillez utiliser HTTPS pour activer l'API Web Crypto",
+      "title": "Échec du chiffrement des données"
+    },
     "file_invalid": {
       "message": "Veuillez vérifier le format et la taille du fichier",
       "title": "Échec du chargement du fichier"

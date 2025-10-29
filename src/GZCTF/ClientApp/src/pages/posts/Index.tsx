@@ -1,19 +1,17 @@
-import { Button, Pagination, Stack } from '@mantine/core'
+import { Button, Group, Pagination, Stack } from '@mantine/core'
 import { mdiPlus } from '@mdi/js'
 import { Icon } from '@mdi/react'
-import cx from 'clsx'
 import { FC, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { PostCard } from '@Components/PostCard'
 import { WithNavBar } from '@Components/WithNavbar'
 import { RequireRole } from '@Components/WithRole'
-import { showErrorNotification } from '@Utils/ApiHelper'
+import { showErrorMsg } from '@Utils/Shared'
 import { OnceSWRConfig } from '@Hooks/useConfig'
 import { usePageTitle } from '@Hooks/usePageTitle'
 import { useUserRole } from '@Hooks/useUser'
 import api, { PostInfoModel, Role } from '@Api'
-import btnClasses from '@Styles/FixedButton.module.css'
 import misc from '@Styles/Misc.module.css'
 
 const ITEMS_PER_PAGE = 10
@@ -51,7 +49,7 @@ const Posts: FC = () => {
       }
       api.info.mutateInfoGetLatestPosts()
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
@@ -59,28 +57,36 @@ const Posts: FC = () => {
 
   return (
     <WithNavBar isLoading={!posts} minWidth={0} withHeader stickyHeader>
-      <Stack justify="space-between" mb="3rem">
-        {posts
-          ?.slice((activePage - 1) * ITEMS_PER_PAGE, activePage * ITEMS_PER_PAGE)
-          .map((post) => <PostCard key={post.id} post={post} onTogglePinned={onTogglePinned} />)}
-        {(posts?.length ?? 0) > ITEMS_PER_PAGE && (
-          <Pagination
-            my={20}
-            value={activePage}
-            onChange={setPage}
-            total={Math.ceil((posts?.length ?? 0) / ITEMS_PER_PAGE)}
-            classNames={{
-              root: cx(misc.flex, misc.justifyCenter, misc.flexRow),
-            }}
-          />
-        )}
+      <Stack justify="space-between" mih="calc(100vh - 78px)">
+        <Stack>
+          {posts?.slice((activePage - 1) * ITEMS_PER_PAGE, activePage * ITEMS_PER_PAGE).map((post) => (
+            <PostCard key={post.id} post={post} onTogglePinned={onTogglePinned} />
+          ))}
+        </Stack>
+
+        <Pagination.Root
+          total={Math.ceil((posts?.length ?? 0) / ITEMS_PER_PAGE)}
+          siblings={3}
+          value={activePage}
+          onChange={setPage}
+          mb="xl"
+        >
+          <Group gap={5} justify="flex-end">
+            <Pagination.First />
+            <Pagination.Previous />
+            <Pagination.Items />
+            <Pagination.Next />
+            <Pagination.Last />
+          </Group>
+        </Pagination.Root>
       </Stack>
       {RequireRole(Role.Admin, role) && (
         <Button
           component={Link}
-          className={btnClasses.root}
+          className={misc.fixedButton}
           __vars={{
             '--fixed-right': 'calc(0.1 * (100vw - 70px - 2rem) + 1rem)',
+            '--fixed-bottom': '6rem',
           }}
           variant="filled"
           radius="xl"

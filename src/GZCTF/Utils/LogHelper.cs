@@ -2,7 +2,9 @@
 using System.Net;
 using System.Text;
 using GZCTF.Extensions;
+using GZCTF.Extensions.Startup;
 using GZCTF.Models.Internal;
+using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Context;
 using Serilog.Events;
@@ -19,77 +21,96 @@ public static class LogHelper
 {
     const string LogTemplate = "[{@t:yy-MM-dd HH:mm:ss.fff} {@l:u3}] " +
                                "{Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}: " +
-                               "{@m} {#if Length(Status) > 0}#{Status} <{UserName}>" +
-                               "{#if Length(IP) > 0} @ {IP}{#end}{#end}\n{@x}";
+                               "{@m} {#if Status <> null}#{Status} <{UserName}> " +
+                               "{#if IP <> null} @ {IP}{#end}{#end}\n{@x}";
 
     const string InitLogTemplate = "[{@t:yy-MM-dd HH:mm:ss.fff} {@l:u3}] {@m}\n{@x}";
 
     /// <summary>
-    /// 记录一条系统日志（无用户信息，默认Info）
+    /// Record a system log (no user information, default Info level)
     /// </summary>
-    /// <param name="logger">传入的 Nlog.Logger</param>
-    /// <param name="msg">Log 消息</param>
-    /// <param name="status">操作执行结果</param>
-    /// <param name="level">Log 级别</param>
+    /// <param name="logger">the logger</param>
+    /// <param name="msg">message</param>
+    /// <param name="status">task status</param>
+    /// <param name="level">log level</param>
     public static void SystemLog<T>(this ILogger<T> logger, string msg, TaskStatus status = TaskStatus.Success,
         LogLevel? level = null) =>
-        Log(logger, msg, "System", string.Empty, status, level ?? LogLevel.Information);
+        Log(logger, msg, "System", null, status, level ?? LogLevel.Information);
 
     /// <summary>
-    /// 登记一条 Log 记录
+    /// Log an error, no formatting
     /// </summary>
-    /// <param name="logger">传入的 Nlog.Logger</param>
-    /// <param name="msg">Log 消息</param>
-    /// <param name="user">用户对象</param>
-    /// <param name="status">操作执行结果</param>
-    /// <param name="level">Log 级别</param>
+    /// <param name="logger"></param>
+    /// <param name="msg"></param>
+    /// <param name="exception"></param>
+    /// <typeparam name="T"></typeparam>
+    public static void LogErrorMessage<T>(this ILogger<T> logger, Exception exception, string msg) =>
+        logger.LogError(exception, "{msg:l}", msg);
+
+    /// <summary>
+    /// Log an error, no formatting
+    /// </summary>
+    /// <param name="logger"></param>
+    /// <param name="exception"></param>
+    /// <typeparam name="T"></typeparam>
+    public static void LogErrorMessage<T>(this ILogger<T> logger, Exception exception) =>
+        logger.LogError(exception, "{msg:l}", exception.Message);
+
+    /// <summary>
+    /// Record a log
+    /// </summary>
+    /// <param name="logger">the logger</param>
+    /// <param name="msg">message</param>
+    /// <param name="status">task status</param>
+    /// <param name="level">log level</param>
+    /// <param name="user">the user</param>
     public static void Log<T>(this ILogger<T> logger, string msg, UserInfo? user, TaskStatus status,
         LogLevel? level = null) =>
-        Log(logger, msg, user?.UserName ?? "Anonymous", user?.IP ?? "0.0.0.0", status, level);
+        Log(logger, msg, user?.UserName ?? "Anonymous", user?.IP, status, level);
 
     /// <summary>
-    /// 登记一条 Log 记录
+    /// Record a log
     /// </summary>
-    /// <param name="logger">传入的 Nlog.Logger</param>
-    /// <param name="msg">Log 消息</param>
-    /// <param name="context">Http上下文</param>
-    /// <param name="status">操作执行结果</param>
-    /// <param name="level">Log 级别</param>
+    /// <param name="logger">the logger</param>
+    /// <param name="msg">message</param>
+    /// <param name="status">task status</param>
+    /// <param name="level">log level</param>
+    /// <param name="context">http context</param>
     public static void Log<T>(this ILogger<T> logger, string msg, HttpContext? context, TaskStatus status,
         LogLevel? level = null)
     {
-        var ip = context?.Connection.RemoteIpAddress?.ToString() ?? IPAddress.Loopback.ToString();
         var username = context?.User.Identity?.Name ?? "Anonymous";
 
-        Log(logger, msg, username, ip, status, level);
+        Log(logger, msg, username, context?.Connection.RemoteIpAddress, status, level);
     }
 
     /// <summary>
-    /// 登记一条 Log 记录
+    /// Record a log
     /// </summary>
-    /// <param name="logger">传入的 Nlog.Logger</param>
-    /// <param name="msg">Log 消息</param>
-    /// <param name="ip">连接IP</param>
-    /// <param name="status">操作执行结果</param>
-    /// <param name="level">Log 级别</param>
-    public static void Log<T>(this ILogger<T> logger, string msg, string ip, TaskStatus status, LogLevel? level = null)
+    /// <param name="logger">the logger</param>
+    /// <param name="msg">message</param>
+    /// <param name="status">task status</param>
+    /// <param name="level">log level</param>
+    /// <param name="ip">ip</param>
+    public static void Log<T>(this ILogger<T> logger, string msg, IPAddress? ip, TaskStatus status,
+        LogLevel? level = null)
         => Log(logger, msg, "Anonymous", ip, status, level);
 
     /// <summary>
-    /// 登记一条 Log 记录
+    /// Record a log
     /// </summary>
-    /// <param name="logger">传入的 Nlog.Logger</param>
-    /// <param name="msg">Log 消息</param>
-    /// <param name="uname">用户名</param>
-    /// <param name="ip">当前IP</param>
-    /// <param name="status">操作执行结果</param>
-    /// <param name="level">Log 级别</param>
-    public static void Log<T>(this ILogger<T> logger, string msg, string uname, string ip, TaskStatus status,
+    /// <param name="logger">the logger</param>
+    /// <param name="msg">message</param>
+    /// <param name="status">task status</param>
+    /// <param name="level">log level</param>
+    /// <param name="uname">user name</param>
+    /// <param name="ip">ip</param>
+    public static void Log<T>(this ILogger<T> logger, string msg, string uname, IPAddress? ip, TaskStatus status,
         LogLevel? level = null)
     {
         using (LogContext.PushProperty("UserName", uname))
         using (LogContext.PushProperty("IP", ip))
-        using (LogContext.PushProperty("Status", status.ToString()))
+        using (LogContext.PushProperty("Status", status))
         {
             logger.Log(level ?? LogLevel.Information, "{msg:l}", msg);
         }
@@ -107,7 +128,8 @@ public static class LogHelper
 
             options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
             {
-                diagnosticContext.Set("IP", httpContext.Connection.RemoteIpAddress?.ToString() ?? "");
+                if (httpContext.Connection.RemoteIpAddress is not null)
+                    diagnosticContext.Set("IP", httpContext.Connection.RemoteIpAddress);
             };
         });
 
@@ -124,42 +146,59 @@ public static class LogHelper
             ))
             .CreateBootstrapLogger();
 
-    public static ILogger GetLogger(IConfiguration configuration, IServiceProvider serviceProvider)
+    const string EFCoreQuerySource = "Microsoft.EntityFrameworkCore.Database.Command";
+
+    public static ILogger GetLogger(WebApplication app)
     {
-        LoggerConfiguration loggerConfig = new LoggerConfiguration()
+        var enableQueryLogging = app.Environment.IsDevelopment() && app.Configuration.GetValue("QUERY_LOGGING", false);
+        var loggerConfig = new LoggerConfiguration()
+            .Destructure.AsScalar<IPAddress>()
+            .Destructure.AsScalar<TaskStatus>()
             .Enrich.FromLogContext()
             .Filter.ByExcluding(
                 Matching.WithProperty<string>("RequestPath", v =>
                     v.TrimEnd('/').Equals("/healthz", StringComparison.OrdinalIgnoreCase) ||
                     v.TrimEnd('/').Equals("/metrics", StringComparison.OrdinalIgnoreCase) ||
-                    v.StartsWith("/assets", StringComparison.OrdinalIgnoreCase)))
+                    v.StartsWith("/assets", StringComparison.OrdinalIgnoreCase) ||
+                    v.StartsWith("/hub", StringComparison.OrdinalIgnoreCase)))
             .Filter.ByExcluding(logEvent =>
                 logEvent.Exception is OperationCanceledException)
             .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .MinimumLevel.Override("AspNetCoreRateLimit", LogEventLevel.Warning)
-            .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Warning)
-            .WriteTo.Async(t => t.Console(
-                new ExpressionTemplate(LogTemplate, theme: TemplateTheme.Literate),
-                LogEventLevel.Debug))
-            .WriteTo.Async(t => t.File(
-                path: Path.Combine(PathHelper.Base, PathHelper.Logs, "log_.log"),
-                formatter: new ExpressionTemplate(LogTemplate),
-                rollingInterval: RollingInterval.Day,
-                fileSizeLimitBytes: 10 * 1024 * 1024,
-                restrictedToMinimumLevel: LogEventLevel.Debug,
-                rollOnFileSizeLimit: true,
-                retainedFileCountLimit: 5,
-                hooks: new ArchiveHooks(CompressionLevel.Optimal,
-                    Path.Combine(PathHelper.Base, PathHelper.Logs, "archive", "{UtcDate:yyyy-MM}"))
-            ))
-            .WriteTo.Database(serviceProvider)
-            .WriteTo.SignalR(serviceProvider);
+            .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Warning);
 
-        if (configuration.GetSection("Logging").GetSection("Loki") is not { } lokiSection || !lokiSection.Exists())
-            return loggerConfig.CreateLogger();
+        if (enableQueryLogging)
+            loggerConfig = loggerConfig.MinimumLevel.Override(EFCoreQuerySource, LogEventLevel.Information);
 
-        if (lokiSection.Get<GrafanaLokiOptions>() is { Enable: true, EndpointUri: not null } lokiOptions)
+        loggerConfig = loggerConfig.WriteTo.Async(t => t.Console(
+            new ExpressionTemplate(LogTemplate, theme: TemplateTheme.Literate),
+            LogEventLevel.Debug)
+        ).WriteTo.Logger(config =>
+            {
+                if (enableQueryLogging)
+                    config = config.Filter
+                        .ByExcluding(Matching.FromSource(EFCoreQuerySource));
+
+                config.WriteTo.Async(t => t.File(
+                        path: Path.Combine(PathHelper.Base, PathHelper.Logs, "log_.log"),
+                        formatter: new ExpressionTemplate(LogTemplate),
+                        rollingInterval: RollingInterval.Day,
+                        fileSizeLimitBytes: 10 * 1024 * 1024,
+                        restrictedToMinimumLevel: LogEventLevel.Debug,
+                        rollOnFileSizeLimit: true,
+                        retainedFileCountLimit: 5,
+                        hooks: new ArchiveHooks(CompressionLevel.Optimal,
+                            Path.Combine(PathHelper.Base, PathHelper.Logs, "archive", "{UtcDate:yyyy-MM}"))
+                    ))
+                    .WriteTo.SignalR(app.Services)
+                    .WriteTo.Database(app.Services);
+            }
+        );
+
+        if (app.Configuration.GetSection("Logging").GetSection("Loki") is { } lokiSection && lokiSection.Exists()
+            && lokiSection.Get<GrafanaLokiOptions>() is { Enable: true, EndpointUri: not null } lokiOptions)
+        {
             loggerConfig = loggerConfig.WriteTo.GrafanaLoki(
                 lokiOptions.EndpointUri,
                 lokiOptions.Labels ?? [new() { Key = "app", Value = "gzctf" }],
@@ -167,16 +206,24 @@ public static class LogHelper
                 lokiOptions.Credentials,
                 lokiOptions.Tenant,
                 (LogEventLevel)(lokiOptions.MinimumLevel ?? LogLevel.Trace));
+        }
+
+        if (TelemetryExtension.TelemetryConfig is { Enable: true })
+        {
+            var options = app.Services.GetRequiredService<IOptions<OpenTelemetry.Exporter.OtlpExporterOptions>>().Value;
+            loggerConfig = loggerConfig.WriteTo.OpenTelemetry(options.Endpoint.ToString(), options.Protocol switch
+            {
+                OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf => Serilog.Sinks.OpenTelemetry.OtlpProtocol.HttpProtobuf,
+                _ => Serilog.Sinks.OpenTelemetry.OtlpProtocol.Grpc
+            });
+        }
+
 
         return loggerConfig.CreateLogger();
     }
 
-    public static string GetStringValue(LogEventPropertyValue? value, string defaultValue = "")
-    {
-        if (value is ScalarValue { Value: string rawValue })
-            return rawValue;
-        return value?.ToString() ?? defaultValue;
-    }
+    public static T? GetLogPropertyValue<T>(LogEventPropertyValue? value, T? defaultValue) =>
+        value is ScalarValue { Value: T rawValue } ? rawValue : defaultValue;
 
     public static string RenderMessageWithExceptions(this LogEvent logEvent)
     {

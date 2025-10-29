@@ -22,6 +22,7 @@
         "delete": "Xóa",
         "save": "Lưu Bản mẫu"
       },
+      "flush_scoreboard": "Làm mới bảng điểm",
       "hint": {
         "add": "Thêm gợi ý"
       },
@@ -32,8 +33,11 @@
       "test_container": {
         "create": "Tạo",
         "destroy": "Phá hủy"
-      },
-      "update_accept_count": "Cập nhật bộ đếm AC"
+      }
+    },
+    "divisions": {
+      "edit": "Chỉnh sửa Bảng",
+      "new": "Bảng mới"
     },
     "games": {
       "challenges": {
@@ -90,6 +94,10 @@
           "description": "Toàn bộ tệp đính kèm động sẽ được tải xuống bằng tên này",
           "label": "Tên Tệp đính kèm Toàn cục"
         },
+        "blood_bonus": {
+          "description": "Kích hoạt thưởng blood cho thử thách này",
+          "label": "Thưởng Blood"
+        },
         "bonus": {
           "description": "Thưởng Triple Blood là điểm thưởng cộng thêm cho ba đội đầu tiên giải được một thử thách. Lượng điểm cộng thêm cho mỗi đội sẽ được tính dựa trên điểm hiện tại của thử thách đó theo một tỉ lệ phần trăm định trước.",
           "first_blood": "Thưởng First Blood (%)",
@@ -99,17 +107,17 @@
         "category": "Danh mục",
         "container_image": "Container Image",
         "cpu_limit": {
-          "description": "Bội số của 0,1 nhân CPU",
-          "label": "Giới hạn CPU (đơn vị 0,1 CPU)"
+          "description": "Bội của 0.1 CPU",
+          "label": "CPU Limit (0.1 CPUs)"
+        },
+        "deadline": {
+          "label": "Hạn chót",
+          "placeholder": "Không có hạn chót"
         },
         "delete": "Bạn có chắc chắn muốn xóa thử thách {{name}} không?",
         "description": "Mô tả",
         "difficulty": "Độ khó",
         "disable": "Bạn có chắc chắn muốn vô hiệu hóa thử thách {{name}} không?",
-        "blood_bonus": {
-          "description": "Kích hoạt thưởng blood cho thử thách này",
-          "label": "Thưởng Blood"
-        },
         "empty": {
           "description": "Nhấp vào phía trên bên phải để tạo thử thách đầu tiên",
           "title": "Ouch! Game này chưa có thử thách nào cả."
@@ -155,6 +163,11 @@
           "description": "Lưu trữ (bao gồm các image)",
           "label": "Giới hạn Lưu trữ (MB)"
         },
+        "submission_limit": {
+          "description": "0 = không giới hạn",
+          "label": "Lần thử tối đa",
+          "placeholder": "Không giới hạn"
+        },
         "title": "Tiêu đề",
         "traffic_capture": {
           "description": "Ghi lại lưu lượng khi đội giải các thử thách. Cần bật proxy nền tảng.",
@@ -165,13 +178,78 @@
           "label": "Loại"
         }
       },
+      "divisions": {
+        "default_permission_label": "Quyền mặc định",
+        "delete_confirm": "Xóa bảng {{name}}?",
+        "empty": {
+          "description": "Nhấn \"Bảng mới\" để tạo bảng đầu tiên",
+          "title": "Chưa có bảng nào"
+        },
+        "form": {
+          "challenge_overrides": {
+            "description": "Chọn thử thách muốn ghi đè quyền",
+            "label": "Ghi đè thử thách",
+            "placeholder": "Tìm thử thách để ghi đè quyền"
+          },
+          "default_permissions": {
+            "description": "Quyền mặc định áp dụng cho các đội trong bảng này",
+            "label": "Quyền mặc định"
+          },
+          "invite_code": {
+            "description": "Ghi đè mã mời ở cấp trò chơi",
+            "label": "Mã mời"
+          },
+          "name": {
+            "description": "Tên của bảng.",
+            "label": "Tên bảng"
+          }
+        },
+        "no_permission": "Không có quyền nào được gán",
+        "override_label": "Ghi đè thử thách",
+        "permissions": {
+          "affect_dynamic_score": {
+            "description": "Ảnh hưởng tính toán điểm động",
+            "label": "Ảnh hưởng điểm động"
+          },
+          "all": "Tất cả quyền",
+          "get_blood": {
+            "description": "Cho phép nhận điểm thưởng blood",
+            "label": "Thưởng Blood"
+          },
+          "get_score": {
+            "description": "Cho phép ghi điểm cho thử thách",
+            "label": "Nhận điểm"
+          },
+          "join_game": {
+            "description": "Cho phép người trong bảng này tham gia trò chơi",
+            "label": "Tham gia trò chơi"
+          },
+          "rank_overall": {
+            "description": "Cho phép hiển thị trên bảng xếp hạng tổng",
+            "label": "Bảng xếp hạng tổng"
+          },
+          "require_review": {
+            "description": "Đăng ký đội yêu cầu phê duyệt thủ công",
+            "label": "Yêu cầu xét duyệt"
+          },
+          "submit_flags": {
+            "description": "Cho phép gửi flag",
+            "label": "Nộp flag"
+          },
+          "view_challenge": {
+            "description": "Cho phép xem mô tả thử thách",
+            "label": "Xem thử thách"
+          }
+        },
+        "unknown_challenge": "Thử thách #{{id}}"
+      },
       "info": {
         "accept_without_review": {
-          "description": "Cho phép trực tiếp ngay sau khi đăng ký đội",
-          "label": "Cho phép mà không cần Đánh giá"
+          "description": "Chấp nhận ngay sau khi đăng ký đội.",
+          "label": "Tự động duyệt đội"
         },
         "container_limit": {
-          "description": "Số lượng container được chia sẻ bởi một đội (0 = không giới hạn).",
+          "description": "Đặt 0 để không giới hạn số container của đội",
           "label": "Giới hạn container của đội."
         },
         "content": "Chi tiết trò chơi.",
@@ -187,12 +265,12 @@
           "label": "Mã mời."
         },
         "member_limit": {
-          "description": "0 có nghĩa là không giới hạn số lượng thành viên trong đội.",
+          "description": "Đặt 0 để không giới hạn số thành viên",
           "label": "Số thành viên tối đa trong đội."
         },
         "poster": "Poster",
         "practice_mode": {
-          "description": "Xem các thử thách sau khi trò chơi kết thúc.",
+          "description": "Xem thử thách sau khi kết thúc",
           "label": "Chế độ luyện tập."
         },
         "start_date": "Ngày bắt đầu.",
@@ -230,6 +308,7 @@
         },
         "participation": {
           "joined": "Đã tham gia.",
+          "no_division": "Không có bảng",
           "not_joined": "Chưa đăng ký.",
           "stats": "{{count}}/{{total}} đã tham gia.",
           "update": "Đặt trạng thái của đội này thành: \"{{status}}\"?"
@@ -296,6 +375,11 @@
         "title": "Chính sách container."
       },
       "platform": {
+        "api_encryption": {
+          "description": "Mã hóa dữ liệu nhạy cảm một số API",
+          "label": "Bật Mã hóa API",
+          "not_available": "API Web Crypto không khả dụng"
+        },
         "color": {
           "description": "Màu sắc tùy chỉnh cho nền tảng.",
           "label": "Màu nền tảng."
@@ -357,7 +441,7 @@
     },
     "logs": {
       "message": "Tin nhắn.",
-      "status": "Trạng thái."
+      "status": "Status"
     },
     "teams": {
       "bio": "Tiểu sử.",
@@ -393,8 +477,13 @@
         "updated": "Thử thách đã được cập nhật."
       },
       "created": "Trò chơi đã được tạo.",
+      "divisions": {
+        "created": "Bảng đã được tạo.",
+        "deleted": "Bảng đã bị xóa.",
+        "invite_copied": "Mã mời đã được sao chép vào bộ nhớ tạm.",
+        "updated": "Bảng đã được cập nhật."
+      },
       "info": {
-        "accept_count_updated": "AC counter đã được cập nhật.",
         "deleted": "Trò chơi đã bị xóa.",
         "info_updated": "Trò chơi đã được cập nhật.",
         "poster": {
@@ -402,7 +491,8 @@
           "uploaded": "Poster đã được tải lên thành công.",
           "uploading": "Đang tải lên Poster..."
         },
-        "public_key_copied": "Public key đã được sao chép vào clipboard."
+        "public_key_copied": "Public key đã được sao chép vào clipboard.",
+        "scoreboard_flushed": "Bộ nhớ đệm bảng điểm đã được làm mới."
       },
       "instances": {
         "created": "Instance đã được tạo.",
@@ -415,7 +505,7 @@
         "updated": "Thông báo đã được cập nhật."
       },
       "participation": {
-        "updated": "Trạng thái đội đã được cập nhật."
+        "updated": "Đã cập nhật trạng thái của đội"
       }
     },
     "instances": {
@@ -486,6 +576,7 @@
   "tab": {
     "games": {
       "challenges": "Thử thách",
+      "divisions": "Bảng",
       "index": "Trò chơi",
       "info": "Thông tin",
       "notices": "Thông báo",

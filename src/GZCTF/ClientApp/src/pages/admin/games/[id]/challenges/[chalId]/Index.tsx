@@ -14,20 +14,22 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
+import { DateTimePicker } from '@mantine/dates'
 import { useModals } from '@mantine/modals'
 import { showNotification } from '@mantine/notifications'
 import { mdiCheck, mdiContentSaveOutline, mdiDatabaseEditOutline, mdiDeleteOutline, mdiEyeOutline } from '@mdi/js'
 import { Icon } from '@mdi/react'
+import dayjs from 'dayjs'
 import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router'
 import { HintList } from '@Components/HintList'
 import { InstanceEntry } from '@Components/InstanceEntry'
 import { ChallengePreviewModal } from '@Components/admin/ChallengePreviewModal'
-import { ScoreFunc } from '@Components/admin/ScoreFunc'
 import { SwitchLabel } from '@Components/admin/SwitchLabel'
 import { WithChallengeEdit } from '@Components/admin/WithChallengeEdit'
-import { showErrorNotification } from '@Utils/ApiHelper'
+import { ScoreFunc } from '@Components/charts/ScoreFunc'
+import { getInputNumber, showErrorMsg } from '@Utils/Shared'
 import {
   ChallengeCategoryItem,
   useChallengeCategoryLabelMap,
@@ -36,6 +38,7 @@ import {
   ChallengeCategoryList,
 } from '@Utils/Shared'
 import { useEditChallenge, useEditChallenges } from '@Hooks/useEdit'
+import { useGame } from '@Hooks/useGame'
 import api, { ChallengeCategory, ChallengeType, ChallengeUpdateModel } from '@Api'
 import misc from '@Styles/Misc.module.css'
 
@@ -44,10 +47,15 @@ const GameChallengeEdit: FC = () => {
   const { id, chalId } = useParams()
   const [numId, numCId] = [parseInt(id ?? '-1'), parseInt(chalId ?? '-1')]
 
+  const { game } = useGame(numId)
   const { challenge, mutate } = useEditChallenge(numId, numCId)
   const { challenges, mutate: mutateChals } = useEditChallenges(numId)
 
   const [challengeInfo, setChallengeInfo] = useState<ChallengeUpdateModel>({ ...challenge })
+  const [deadline, setDeadline] = useState<dayjs.Dayjs | null>(
+    challenge?.deadlineUtc ? dayjs(challenge?.deadlineUtc) : null
+  )
+
   const [disabled, setDisabled] = useState(false)
 
   const [minRate, setMinRate] = useState((challenge?.minScoreRate ?? 0.25) * 100)
@@ -79,6 +87,7 @@ const GameChallengeEdit: FC = () => {
     try {
       const res = await api.edit.editUpdateGameChallenge(numId, numCId, {
         ...challenge,
+        deadlineUtc: deadline ? deadline.valueOf() : 0,
         isEnabled: undefined,
       })
       if (!noFeedback) {
@@ -91,7 +100,7 @@ const GameChallengeEdit: FC = () => {
       mutate(res.data)
       mutateChals()
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       if (!noFeedback) {
         setDisabled(false)
@@ -115,7 +124,7 @@ const GameChallengeEdit: FC = () => {
       )
       navigate(`/admin/games/${id}/challenges`)
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
@@ -135,7 +144,7 @@ const GameChallengeEdit: FC = () => {
         mutate({ ...challenge, testContainer: res.data })
       }
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
@@ -155,7 +164,7 @@ const GameChallengeEdit: FC = () => {
         mutate({ ...challenge, testContainer: undefined })
       }
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
@@ -188,7 +197,7 @@ const GameChallengeEdit: FC = () => {
   return (
     <WithChallengeEdit
       isLoading={!challenge}
-      headProps={{ justify: 'apart' }}
+      contentPos="space-between"
       backUrl={`/admin/games/${id}/challenges`}
       head={
         <>
@@ -264,7 +273,7 @@ const GameChallengeEdit: FC = () => {
           <Grid.Col span={1}>
             <Select
               label={
-                <Group gap="sm">
+                <Group gap="sm" wrap="nowrap">
                   <Text size="sm">{t('admin.content.games.challenges.type.label')}</Text>
                   <Text size="xs" c="dimmed">
                     {t('admin.content.games.challenges.type.description')}
@@ -300,7 +309,7 @@ const GameChallengeEdit: FC = () => {
               })}
             />
           </Grid.Col>
-          <Grid.Col span={3}>
+          <Grid.Col span={2}>
             <Textarea
               w="100%"
               label={
@@ -318,6 +327,38 @@ const GameChallengeEdit: FC = () => {
               maxRows={5}
               onChange={(e) => setChallengeInfo({ ...challengeInfo, content: e.target.value })}
             />
+          </Grid.Col>
+          <Grid.Col span={1}>
+            <Stack gap="0.425625rem">
+              <NumberInput
+                label={t('admin.content.games.challenges.submission_limit.label')}
+                description={t('admin.content.games.challenges.submission_limit.description')}
+                placeholder={t('admin.content.games.challenges.submission_limit.placeholder')}
+                min={0}
+                max={10000}
+                disabled={disabled}
+                stepHoldDelay={500}
+                stepHoldInterval={(t) => Math.max(1000 / t ** 2, 25)}
+                value={challengeInfo?.submissionLimit || undefined}
+                onChange={(e) => {
+                  const number = getInputNumber(e)
+                  if (isNaN(number)) return
+                  setChallengeInfo({ ...challengeInfo, submissionLimit: number })
+                }}
+              />
+              <DateTimePicker
+                label={t('admin.content.games.challenges.deadline.label')}
+                placeholder={t('admin.content.games.challenges.deadline.placeholder')}
+                size="sm"
+                value={deadline?.toDate()}
+                valueFormat="L LT"
+                disabled={disabled}
+                clearable
+                onChange={(e) => {
+                  setDeadline(e ? dayjs(e) : null)
+                }}
+              />
+            </Stack>
           </Grid.Col>
           <Grid.Col span={1}>
             <Stack gap="sm">
@@ -348,7 +389,11 @@ const GameChallengeEdit: FC = () => {
                   stepHoldDelay={500}
                   stepHoldInterval={(t) => Math.max(1000 / t ** 2, 25)}
                   value={challengeInfo?.originalScore ?? 500}
-                  onChange={(e) => typeof e !== 'string' && setChallengeInfo({ ...challengeInfo, originalScore: e })}
+                  onChange={(e) => {
+                    const number = getInputNumber(e)
+                    if (isNaN(number)) return
+                    setChallengeInfo({ ...challengeInfo, originalScore: number })
+                  }}
                 />
                 <NumberInput
                   label={t('admin.content.games.challenges.difficulty')}
@@ -361,7 +406,11 @@ const GameChallengeEdit: FC = () => {
                   value={challengeInfo?.difficulty ?? 100}
                   stepHoldDelay={500}
                   stepHoldInterval={(t) => Math.max(1000 / t ** 2, 25)}
-                  onChange={(e) => typeof e !== 'string' && setChallengeInfo({ ...challengeInfo, difficulty: e })}
+                  onChange={(e) => {
+                    const number = getInputNumber(e, true)
+                    if (isNaN(number)) return
+                    setChallengeInfo({ ...challengeInfo, difficulty: number })
+                  }}
                 />
               </Group>
               <Input.Wrapper label={t('admin.content.games.challenges.min_score_radio.label')} h="3.8rem" required>
@@ -438,6 +487,7 @@ const GameChallengeEdit: FC = () => {
             <Grid.Col span={4}>
               <InstanceEntry
                 test
+                label={`${challenge?.title} @ ${game?.title} (test)`}
                 disabled={disabled}
                 context={{
                   closeTime: challenge?.testContainer?.expectStopAt,
@@ -456,9 +506,11 @@ const GameChallengeEdit: FC = () => {
                 stepHoldDelay={500}
                 stepHoldInterval={(t) => Math.max(1000 / t ** 2, 25)}
                 value={challengeInfo.containerExposePort ?? 1}
-                onChange={(e) =>
-                  typeof e !== 'string' && setChallengeInfo({ ...challengeInfo, containerExposePort: e })
-                }
+                onChange={(e) => {
+                  const number = getInputNumber(e)
+                  if (isNaN(number)) return
+                  setChallengeInfo({ ...challengeInfo, containerExposePort: number })
+                }}
               />
             </Grid.Col>
             <Grid.Col span={2}>
@@ -472,7 +524,11 @@ const GameChallengeEdit: FC = () => {
                 stepHoldDelay={500}
                 stepHoldInterval={(t) => Math.max(1000 / t ** 2, 25)}
                 value={challengeInfo.cpuCount ?? 1}
-                onChange={(e) => typeof e !== 'string' && setChallengeInfo({ ...challengeInfo, cpuCount: e })}
+                onChange={(e) => {
+                  const number = getInputNumber(e)
+                  if (isNaN(number)) return
+                  setChallengeInfo({ ...challengeInfo, cpuCount: number })
+                }}
               />
             </Grid.Col>
             <Grid.Col span={2}>
@@ -486,7 +542,11 @@ const GameChallengeEdit: FC = () => {
                 stepHoldDelay={500}
                 stepHoldInterval={(t) => Math.max(1000 / t ** 2, 25)}
                 value={challengeInfo.memoryLimit ?? 32}
-                onChange={(e) => typeof e !== 'string' && setChallengeInfo({ ...challengeInfo, memoryLimit: e })}
+                onChange={(e) => {
+                  const number = getInputNumber(e)
+                  if (isNaN(number)) return
+                  setChallengeInfo({ ...challengeInfo, memoryLimit: number })
+                }}
               />
             </Grid.Col>
             <Grid.Col span={2}>
@@ -500,7 +560,11 @@ const GameChallengeEdit: FC = () => {
                 stepHoldDelay={500}
                 stepHoldInterval={(t) => Math.max(1000 / t ** 2, 25)}
                 value={challengeInfo.storageLimit ?? 128}
-                onChange={(e) => typeof e !== 'string' && setChallengeInfo({ ...challengeInfo, storageLimit: e })}
+                onChange={(e) => {
+                  const number = getInputNumber(e)
+                  if (isNaN(number)) return
+                  setChallengeInfo({ ...challengeInfo, storageLimit: number })
+                }}
               />
             </Grid.Col>
             <Grid.Col span={4} display="flex" className={misc.alignCenter}>
@@ -523,7 +587,9 @@ const GameChallengeEdit: FC = () => {
           content: tryDefault([challengeInfo?.content, challenge?.content]),
           hints: tryDefault([challengeInfo?.hints, challenge?.hints], []),
           score: tryDefault([challengeInfo?.originalScore, challenge?.originalScore], 500),
+          limit: tryDefault([challengeInfo?.submissionLimit, challenge?.submissionLimit], 0),
           category: category as ChallengeCategory,
+          deadline: deadline ? deadline.valueOf() : undefined,
           type: challenge?.type ?? ChallengeType.StaticAttachment,
         }}
         opened={previewOpened}

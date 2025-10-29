@@ -1,4 +1,14 @@
-import { ActionIcon, AppShell, Avatar, Menu, MenuDivider, Stack, Tooltip, useMantineColorScheme } from '@mantine/core'
+import {
+  ActionIcon,
+  AppShell,
+  Avatar,
+  Menu,
+  MenuDivider,
+  Popover,
+  Stack,
+  Tooltip,
+  useMantineColorScheme,
+} from '@mantine/core'
 import {
   mdiAccountCircleOutline,
   mdiAccountGroupOutline,
@@ -14,6 +24,7 @@ import {
   mdiWeatherNight,
   mdiWeatherSunny,
   mdiWrenchOutline,
+  mdiTransitConnectionVariant,
 } from '@mdi/js'
 import { Icon } from '@mdi/react'
 import cx from 'clsx'
@@ -22,11 +33,13 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router'
 import { LogoBox } from '@Components/LogoBox'
 import { AppControlProps } from '@Components/WithNavbar'
+import { WsrxManager } from '@Components/WsrxManager'
+import { clearLocalCache } from '@Utils/Cache'
 import { LanguageMap, SupportedLanguages, useLanguage } from '@Utils/I18n'
-import { clearLocalCache } from '@Hooks/useConfig'
+import { useConfig } from '@Hooks/useConfig'
 import { useLogOut, useUser } from '@Hooks/useUser'
-import { Role } from '@Api'
-import classes from '@Styles/AppNavBar.module.css'
+import { ContainerPortMappingType, Role } from '@Api'
+import classes from '@Styles/AppNavbar.module.css'
 import misc from '@Styles/Misc.module.css'
 
 interface NavbarItem {
@@ -68,6 +81,7 @@ export const AppNavbar: FC<AppControlProps> = ({ openColorModal }) => {
 
   const logout = useLogOut()
   const { user, error } = useUser()
+  const { config } = useConfig()
   const { t } = useTranslation()
   const { setLanguage, supportedLanguages } = useLanguage()
 
@@ -117,6 +131,20 @@ export const AppNavbar: FC<AppControlProps> = ({ openColorModal }) => {
 
       <AppShell.Section className={cx(classes.section, misc.justifyEnd)}>
         <Stack w="100%" align="center" justify="center" gap={5}>
+          {/* WebSocket Reflector X Integration */}
+          {config.portMapping === ContainerPortMappingType.PlatformProxy && (
+            <Popover position="right" offset={24} width={320}>
+              <Popover.Target>
+                <ActionIcon className={classes.link}>
+                  <Icon path={mdiTransitConnectionVariant} size={1} />
+                </ActionIcon>
+              </Popover.Target>
+              <Popover.Dropdown>
+                <WsrxManager />
+              </Popover.Dropdown>
+            </Popover>
+          )}
+
           {/* Language */}
           <Menu position="right" offset={24} width={160}>
             <Menu.Target>

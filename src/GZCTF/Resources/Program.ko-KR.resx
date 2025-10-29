@@ -395,6 +395,12 @@
   <data name="CronJob_Stopped" xml:space="preserve">
     <value>Cron 작업이 중단되었습니다.</value>
   </data>
+  <data name="CronJob_ExecuteFailed" xml:space="preserve">
+    <value>cronjob {0} 실행 중 오류: {1}</value>
+  </data>
+  <data name="CronJob_LaunchedWatchDog" xml:space="preserve">
+    <value>이미 다른 인스턴스가 cronjob 실행 중입니다. watchdog 을 사용합시다</value>
+  </data>
   <data name="Database_ConnectionFailed" xml:space="preserve">
     <value>({0}) 데이터베이스에 연결하지 못했습니다. 연결 정보를 확인하십시오.</value>
   </data>
@@ -914,6 +920,9 @@
   <data name="Challenge_UseAssetsApiForDynamic" xml:space="preserve">
     <value>assets API 를 이용하여 첨부 파일을 업로드하세요.</value>
   </data>
+  <data name="Challenge_SubmissionLimitExceeded" xml:space="preserve">
+    <value>제출 횟수 제한에 도달했습니다</value>
+  </data>
   <data name="Container_AddressResolveFailed" xml:space="preserve">
     <value>컨테이너 주소가 잘못되었습니다.</value>
   </data>
@@ -989,8 +998,8 @@
   <data name="Team_MemberRemoved" xml:space="preserve">
     <value>{1} 팀에서 {0} 방출</value>
   </data>
-  <data name="Team_MultipleCreationNotAllowed" xml:space="preserve">
-    <value>한 팀 이상 생성할 수 없습니다.</value>
+  <data name="Team_ExceededCreationLimit" xml:space="preserve">
+    <value>보유할 수 있는 팀 수를 초과했습니다</value>
   </data>
   <data name="Team_NameEmpty" xml:space="preserve">
     <value>팀 이름을 입력하세요.</value>
@@ -1008,7 +1017,7 @@
     <value>사용자가 존재하지 않습니다.</value>
   </data>
   <data name="Team_NewCaptainTeamTooMany" xml:space="preserve">
-    <value>팀에 팀장이 너무 많습니다.</value>
+    <value>새 팀장이 너무 많은 팀에 소속되어있습니다.</value>
   </data>
   <data name="Team_UserJoined" xml:space="preserve">
     <value>{0} 팀에 참가</value>
@@ -1045,5 +1054,14 @@
   </data>
   <data name="Init_StorageInitFailed" xml:space="preserve">
     <value>저장소 초기화에 실패했습니다: {0}</value>
+  </data>
+  <data name="Division_NotFound" xml:space="preserve">
+    <value>디비전을 찾을 수 없습니다</value>
+  </data>
+  <data name="Challenge_SubmissionNoPermission" xml:space="preserve">
+    <value>플래그를 제출할 권한이 없습니다</value>
+  </data>
+  <data name="Challenge_DeadlinePassed" xml:space="preserve">
+    <value>이 도전 과제의 마감 시간이 지났습니다</value>
   </data>
 </root>

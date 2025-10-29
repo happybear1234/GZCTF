@@ -1,20 +1,23 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Text.Json.Serialization;
 using GZCTF.Extensions;
 using GZCTF.Services.Cache;
 using MemoryPack;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
 using OpenTelemetry.Exporter;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Utilities.Encoders;
 using Serilog.Sinks.Grafana.Loki;
-using IPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
 
 namespace GZCTF.Models.Internal;
 
 /// <summary>
 /// Ignore when saving automatically
 /// </summary>
+[AttributeUsage(AttributeTargets.Property)]
 public sealed class AutoSaveIgnoreAttribute : Attribute;
 
 /// <summary>
@@ -98,6 +101,127 @@ public class ContainerPolicy
     public int RenewalWindow { get; set; } = 10;
 }
 
+public class X25519KeyPair
+{
+    /// <summary>
+    /// Public key
+    /// </summary>
+    public string PublicKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Private key
+    /// </summary>
+    public string PrivateKey { get; set; } = string.Empty;
+
+    public void RegenerateKeys(byte[] xorKey)
+    {
+        var kp = CryptoUtils.GenerateX25519KeyPair();
+        var privateKey = (X25519PrivateKeyParameters)kp.Private;
+        var publicKey = (X25519PublicKeyParameters)kp.Public;
+        var privateKeyBytes = Codec.Xor(privateKey.GetEncoded(), xorKey);
+        PublicKey = Base64.ToBase64String(publicKey.GetEncoded());
+        PrivateKey = Base64.ToBase64String(privateKeyBytes);
+    }
+
+    public string? Decrypt(string data, byte[] xorKey)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(xorKey);
+
+        try
+        {
+            var encryptedData = Base64.Decode(data);
+            var privateKeyBytes = Codec.Xor(Base64.Decode(PrivateKey), xorKey);
+            var privateKey = new X25519PrivateKeyParameters(privateKeyBytes);
+
+            return Encoding.UTF8.GetString(CryptoUtils.DecryptData(encryptedData, privateKey));
+        }
+        catch
+        {
+            // If decryption fails, return null
+            return null;
+        }
+    }
+}
+
+public class Ed25519KeyPair
+{
+    /// <summary>
+    /// Public key
+    /// </summary>
+    public string PublicKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Private key
+    /// </summary>
+    public string PrivateKey { get; set; } = string.Empty;
+
+    public void RegenerateKeys(byte[] xorKey)
+    {
+        var kp = CryptoUtils.GenerateEd25519KeyPair();
+        var privateKey = (Ed25519PrivateKeyParameters)kp.Private;
+        var publicKey = (Ed25519PublicKeyParameters)kp.Public;
+        var privateKeyBytes = Codec.Xor(privateKey.GetEncoded(), xorKey);
+        PublicKey = Base64.ToBase64String(publicKey.GetEncoded());
+        PrivateKey = Base64.ToBase64String(privateKeyBytes);
+    }
+
+    public string Sign(string data, byte[] xorKey, bool useUrlSafeBase64 = false)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(xorKey);
+
+        var privateKeyBytes = Codec.Xor(Base64.Decode(PrivateKey), xorKey);
+        var privateKey = new Ed25519PrivateKeyParameters(privateKeyBytes);
+        return CryptoUtils.GenerateSignature(data, privateKey, SignAlgorithm.Ed25519, useUrlSafeBase64);
+    }
+
+    public bool Verify(string data, string signature, bool useUrlSafeBase64 = false)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(signature);
+
+        try
+        {
+            var publicKey = new Ed25519PublicKeyParameters(Base64.Decode(PublicKey));
+            return CryptoUtils.VerifySignature(data, signature, publicKey, SignAlgorithm.Ed25519, useUrlSafeBase64);
+        }
+        catch
+        {
+            // If verification fails, return false
+            return false;
+        }
+    }
+}
+
+/// <summary>
+/// A context for signature operations, including signing and verifying
+/// </summary>
+public record SignatureContext(Ed25519KeyPair EncryptedKeyPair, byte[] XorKey)
+{
+    public string Sign(string data, bool urlSafe = true) =>
+        EncryptedKeyPair.Sign(data, XorKey, urlSafe);
+
+    public bool Verify(string data, string signature, bool urlSafe = true) =>
+        EncryptedKeyPair.Verify(data, signature, urlSafe);
+}
+
+/// <summary>
+/// Configs controlled by the backend
+/// </summary>
+public class ManagedConfig
+{
+    /// <summary>
+    /// Api encryption configuration
+    /// </summary>
+    public X25519KeyPair ApiEncryption { get; set; } = new();
+
+    /// <summary>
+    /// Api token configuration
+    /// </summary>
+    public Ed25519KeyPair ApiToken { get; set; } = new();
+}
+
 /// <summary>
 /// Global settings
 /// </summary>
@@ -140,6 +264,12 @@ public class GlobalConfig
     public string? CustomTheme { get; set; }
 
     /// <summary>
+    /// Use asymmetric encryption for API requests
+    /// </summary>
+    [CacheFlush(CacheKey.ClientConfig)]
+    public bool ApiEncryption { get; set; }
+
+    /// <summary>
     /// Platform logo hash
     /// </summary>
     [AutoSaveIgnore]
@@ -152,13 +282,13 @@ public class GlobalConfig
     public string? FaviconHash { get; set; }
 
     [JsonIgnore]
-    public string? LogoUrl => LogoHash.IsNullOrEmpty() ? null : $"/assets/{LogoHash}/logo";
+    public string? LogoUrl => string.IsNullOrEmpty(LogoHash) ? null : $"/assets/{LogoHash}/logo";
 
     /// <summary>
     /// Platform name, used for email and homepage rendering
     /// </summary>
     [JsonIgnore]
-    public string Platform => Title.IsNullOrEmpty() ? "GZ::CTF" : $"{Title}::CTF";
+    public string Platform => string.IsNullOrEmpty(Title) ? "GZ::CTF" : $"{Title}::CTF";
 }
 
 /// <summary>
@@ -188,6 +318,11 @@ public partial class ClientConfig
     public string? CustomTheme { get; set; }
 
     /// <summary>
+    /// The public key used for API requests
+    /// </summary>
+    public string? ApiPublicKey { get; set; }
+
+    /// <summary>
     /// Platform logo URL
     /// </summary>
     public string? LogoUrl { get; set; }
@@ -212,8 +347,18 @@ public partial class ClientConfig
     /// </summary>
     public int RenewalWindow { get; set; } = 10;
 
-    public static ClientConfig FromConfigs(GlobalConfig globalConfig, ContainerPolicy containerPolicy,
-        ContainerProvider containerProvider) =>
+    [JsonIgnore]
+    public DateTimeOffset UpdateTimeUtc { get; set; } = DateTimeOffset.UtcNow;
+
+    public static ClientConfig FromServiceProvider(IServiceProvider serviceProvider) =>
+        FromConfigs(
+            serviceProvider.GetRequiredService<IOptionsSnapshot<GlobalConfig>>().Value,
+            serviceProvider.GetRequiredService<IOptionsSnapshot<ContainerPolicy>>().Value,
+            serviceProvider.GetRequiredService<IOptionsSnapshot<ContainerProvider>>().Value,
+            serviceProvider.GetRequiredService<IOptionsSnapshot<ManagedConfig>>().Value);
+
+    static ClientConfig FromConfigs(GlobalConfig globalConfig, ContainerPolicy containerPolicy,
+        ContainerProvider containerProvider, ManagedConfig managedConfig) =>
         new()
         {
             Title = globalConfig.Title,
@@ -221,6 +366,7 @@ public partial class ClientConfig
             FooterInfo = globalConfig.FooterInfo,
             CustomTheme = globalConfig.CustomTheme,
             LogoUrl = globalConfig.LogoUrl,
+            ApiPublicKey = globalConfig.ApiEncryption ? managedConfig.ApiEncryption.PublicKey : null,
             PortMapping = containerProvider.PortMappingType,
             DefaultLifetime = containerPolicy.DefaultLifetime,
             ExtensionDuration = containerPolicy.ExtensionDuration,
@@ -294,11 +440,32 @@ public class KubernetesConfig
     public string[]? Dns { get; set; }
 }
 
+public class RegistrySet<T> : Dictionary<string, T>
+    where T : class
+{
+    public T? GetForImage(string image)
+    {
+        if (string.IsNullOrWhiteSpace(image))
+            return null;
+
+        image = image.Contains("://") ? image : $"https://{image}";
+
+        if (!Uri.TryCreate(image, UriKind.Absolute, out var uri) || uri.HostNameType == UriHostNameType.Unknown)
+            return null;
+
+        return TryGetValue(uri.Authority, out var cfg) ? cfg :
+            TryGetValue(uri.Host, out var cfgHost) ? cfgHost : null;
+    }
+}
+
 public class RegistryConfig
 {
     public string? ServerAddress { get; set; }
     public string? UserName { get; set; }
     public string? Password { get; set; }
+
+    public bool Valid => !string.IsNullOrEmpty(UserName) &&
+                         !string.IsNullOrEmpty(Password);
 }
 
 #endregion
@@ -310,7 +477,6 @@ public enum CaptchaProvider
 {
     None,
     HashPow,
-    GoogleRecaptcha,
     CloudflareTurnstile
 }
 
@@ -331,16 +497,7 @@ public class CaptchaConfig
     public CaptchaProvider Provider { get; set; }
     public string? SecretKey { get; set; }
     public string? SiteKey { get; set; }
-
-    public GoogleRecaptchaConfig GoogleRecaptcha { get; set; } = new();
-
     public HashPowConfig HashPow { get; set; } = new();
-}
-
-public class GoogleRecaptchaConfig
-{
-    public string VerifyApiAddress { get; set; } = "https://www.recaptcha.net/recaptcha/api/siteverify";
-    public float RecaptchaThreshold { get; set; } = 0.5f;
 }
 
 #endregion
@@ -353,13 +510,15 @@ public class TelemetryConfig
     public OpenTelemetryConfig OpenTelemetry { get; set; } = new();
     public AzureMonitorConfig AzureMonitor { get; set; } = new();
     public ConsoleConfig Console { get; set; } = new();
+
+    [JsonIgnore]
+    public bool Enable => Prometheus.Enable || OpenTelemetry.Enable || AzureMonitor.Enable || Console.Enable;
 }
 
 public class PrometheusConfig
 {
     public bool Enable { get; set; }
     public bool TotalNameSuffixForCounters { get; set; }
-    public ushort? Port { get; set; }
 }
 
 public class OpenTelemetryConfig
@@ -401,9 +560,9 @@ public class ForwardedOptions : ForwardedHeadersOptions
     public void ToForwardedHeadersOptions(ForwardedHeadersOptions options)
     {
         // assign the same value to the base class via reflection
-        Type type = typeof(ForwardedHeadersOptions);
-        PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-        foreach (PropertyInfo property in properties)
+        var type = typeof(ForwardedHeadersOptions);
+        var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        foreach (var property in properties)
         {
             // skip the properties that are not being set directly
             if (property.Name is nameof(KnownNetworks) or nameof(KnownProxies))
@@ -417,9 +576,9 @@ public class ForwardedOptions : ForwardedHeadersOptions
             // split the network into address and prefix length
             var parts = network.Split('/');
             if (parts.Length == 2 &&
-                IPAddress.TryParse(parts[0], out IPAddress? prefix) &&
+                IPAddress.TryParse(parts[0], out var prefix) &&
                 int.TryParse(parts[1], out var prefixLength))
-                options.KnownNetworks.Add(new IPNetwork(prefix, prefixLength));
+                options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(prefix, prefixLength));
         });
 
         TrustedProxies?.ForEach(proxy => proxy.ResolveIP().ToList().ForEach(ip => options.KnownProxies.Add(ip)));

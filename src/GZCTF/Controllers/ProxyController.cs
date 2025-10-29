@@ -1,13 +1,14 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using FluentStorage.Blobs;
 using GZCTF.Models.Internal;
 using GZCTF.Repositories.Interface;
 using GZCTF.Services.Cache;
+using GZCTF.Storage;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Localization;
@@ -28,8 +29,8 @@ public class ProxyController(
     IContainerRepository containerRepository,
     IStringLocalizer<Program> localizer) : ControllerBase
 {
-    const int BufferSize = 1024 * 4;
-    const uint ConnectionLimit = 64;
+    const int BufferSize = 4096;
+    const uint ConnectionLimit = 32;
 
     static readonly JsonSerializerOptions JsonOptions =
         new()
@@ -40,10 +41,10 @@ public class ProxyController(
         };
 
     static readonly DistributedCacheEntryOptions StoreOption =
-        new() { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(10) };
+        new() { SlidingExpiration = TimeSpan.FromHours(10) };
 
     static readonly DistributedCacheEntryOptions ValidOption =
-        new() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) };
+        new() { SlidingExpiration = TimeSpan.FromMinutes(10) };
 
     readonly bool _enablePlatformProxy = provider.Value.PortMappingType == ContainerPortMappingType.PlatformProxy;
     readonly bool _enableTrafficCapture = provider.Value.EnableTrafficCapture;
@@ -68,27 +69,27 @@ public class ProxyController(
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Container_NotFound)],
                 StatusCodes.Status404NotFound));
 
-        var key = CacheKey.ConnectionCount(id);
-
         if (!HttpContext.WebSockets.IsWebSocketRequest)
             return NoContent();
 
-        if (!await IncrementConnectionCount(key))
+        var key = CacheKey.ConnectionCount(id);
+
+        if (!await IncreaseConnectionCount(key))
             return BadRequest(
                 new RequestResponse(localizer[nameof(Resources.Program.Container_ConnectionLimitExceeded)]));
 
-        Container? container = await containerRepository.GetContainerWithInstanceById(id, token);
+        var container = await containerRepository.GetContainerWithInstanceById(id, token);
 
         if (container is null || !container.IsProxy)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Container_NotFound)],
                 StatusCodes.Status404NotFound));
 
-        IPAddress? ipAddress = (await Dns.GetHostAddressesAsync(container.IP, token)).FirstOrDefault();
+        var ipAddress = (await Dns.GetHostAddressesAsync(container.IP, token)).FirstOrDefault();
 
         if (ipAddress is null)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Container_AddressResolveFailed)]));
 
-        IPAddress? clientIp = HttpContext.Connection.RemoteIpAddress;
+        var clientIp = HttpContext.Connection.RemoteIpAddress;
         var clientPort = HttpContext.Connection.RemotePort;
 
         if (clientIp is null)
@@ -135,18 +136,18 @@ public class ProxyController(
         if (!HttpContext.WebSockets.IsWebSocketRequest)
             return NoContent();
 
-        Container? container = await containerRepository.GetContainerById(id, token);
+        var container = await containerRepository.GetContainerById(id, token);
 
         if (container is null || container.GameInstanceId is not null || !container.IsProxy)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Container_NotFound)],
                 StatusCodes.Status404NotFound));
 
-        IPAddress? ipAddress = (await Dns.GetHostAddressesAsync(container.IP, token)).FirstOrDefault();
+        var ipAddress = (await Dns.GetHostAddressesAsync(container.IP, token)).FirstOrDefault();
 
         if (ipAddress is null)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Container_AddressResolveFailed)]));
 
-        IPAddress? clientIp = HttpContext.Connection.RemoteIpAddress;
+        var clientIp = HttpContext.Connection.RemoteIpAddress;
         var clientPort = HttpContext.Connection.RemotePort;
 
         if (clientIp is null)
@@ -179,14 +180,14 @@ public class ProxyController(
             catch (SocketException e)
             {
                 logger.SystemLog(
-                    Program.StaticLocalizer[nameof(Resources.Program.Proxy_ContainerConnectionFailedLog),
+                    StaticLocalizer[nameof(Resources.Program.Proxy_ContainerConnectionFailedLog),
                         e.SocketErrorCode,
                         $"{target.Address}:{target.Port}"],
                     TaskStatus.Failed, LogLevel.Debug);
-                return new JsonResult(new RequestResponse(
+
+                return RequestResponse.Result(
                     localizer[nameof(Resources.Program.Proxy_ContainerConnectionFailed), e.SocketErrorCode],
-                    StatusCodes.Status418ImATeapot))
-                { StatusCode = StatusCodes.Status418ImATeapot };
+                    StatusCodes.Status418ImATeapot);
             }
 
             using WebSocket ws = await HttpContext.WebSockets.AcceptWebSocketAsync();
@@ -198,20 +199,18 @@ public class ProxyController(
             }
             catch (Exception e)
             {
-                logger.LogError(e, Program.StaticLocalizer[nameof(Resources.Program.Proxy_Error)]);
+                logger.LogErrorMessage(e, StaticLocalizer[nameof(Resources.Program.Proxy_Error)]);
             }
-            finally
-            {
-                await DecrementConnectionCount(CacheKey.ConnectionCount(id));
-            }
-
-            return new EmptyResult();
         }
         finally
         {
             if (stream is not null)
                 await stream.DisposeAsync();
+
+            await DecreaseConnectionCount(CacheKey.ConnectionCount(id));
         }
+
+        return new EmptyResult();
     }
 
     void LogProxyResult(Guid id, IPEndPoint client, IPEndPoint target, ulong tx, ulong rx)
@@ -235,14 +234,15 @@ public class ProxyController(
         CancellationToken token = default)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+
         cts.CancelAfter(TimeSpan.FromMinutes(30));
 
         CancellationToken ct = cts.Token;
         ulong tx = 0, rx = 0;
 
-        Task sender = Task.Run(async () =>
+        var sender = Task.Run(async () =>
         {
-            var buffer = new byte[BufferSize];
+            var buffer = ArrayPool<byte>.Shared.Rent(BufferSize);
             try
             {
                 while (true)
@@ -254,16 +254,23 @@ public class ProxyController(
                         continue;
 
                     tx += (ulong)status.Count;
-                    await stream.WriteAsync(buffer.AsMemory(0, status.Count), ct);
+                    Memory<byte> memory = buffer.AsMemory(0, status.Count);
+                    await stream.WriteAsync(memory, ct);
                 }
             }
-            catch (TaskCanceledException) { }
-            finally { await cts.CancelAsync(); }
+            catch
+            {
+                // ignore
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }, ct);
 
-        Task receiver = Task.Run(async () =>
+        var receiver = Task.Run(async () =>
         {
-            var buffer = new byte[BufferSize];
+            var buffer = ArrayPool<byte>.Shared.Rent(BufferSize);
             try
             {
                 while (true)
@@ -271,20 +278,28 @@ public class ProxyController(
                     var count = await stream.ReadAsync(buffer, ct);
                     if (count == 0)
                     {
-                        await ws.CloseAsync(WebSocketCloseStatus.Empty, null, token);
+                        await ws.CloseAsync(WebSocketCloseStatus.Empty, null, ct);
                         break;
                     }
 
                     rx += (ulong)count;
-                    await ws.SendAsync(
-                        buffer.AsMemory(0, count), WebSocketMessageType.Binary, true, ct);
+                    Memory<byte> memory = buffer.AsMemory(0, count);
+                    await ws.SendAsync(memory, WebSocketMessageType.Binary, true, ct);
                 }
             }
-            catch (TaskCanceledException) { }
-            finally { await cts.CancelAsync(); }
+            catch
+            {
+                // ignore
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }, ct);
 
         await Task.WhenAny(sender, receiver);
+        await cts.CancelAsync();
+        await Task.WhenAll(sender, receiver);
 
         return (tx, rx);
     }
@@ -312,11 +327,11 @@ public class ProxyController(
     }
 
     /// <summary>
-    /// Implement Fetch-Add operation for container TCP connection count
+    /// Increase Fetch-Add operation for container TCP connection count
     /// </summary>
     /// <param name="key">Cache key</param>
     /// <returns></returns>
-    async Task<bool> IncrementConnectionCount(string key)
+    async Task<bool> IncreaseConnectionCount(string key)
     {
         var bytes = await cache.GetAsync(key);
 
@@ -334,11 +349,11 @@ public class ProxyController(
     }
 
     /// <summary>
-    /// Implement decrement operation for container TCP connection count
+    /// Implement decrease operation for container TCP connection count
     /// </summary>
     /// <param name="key">Cache key</param>
     /// <returns></returns>
-    async Task DecrementConnectionCount(string key)
+    async Task DecreaseConnectionCount(string key)
     {
         var bytes = await cache.GetAsync(key);
 

@@ -10,38 +10,31 @@ import {
   SimpleGrid,
   Stack,
   Switch,
-  TagsInput,
   Text,
   Textarea,
   TextInput,
 } from '@mantine/core'
-import { DatePickerInput, TimeInput } from '@mantine/dates'
+import { DateTimePicker } from '@mantine/dates'
 import { Dropzone } from '@mantine/dropzone'
 import { useClipboard, useInputState } from '@mantine/hooks'
 import { useModals } from '@mantine/modals'
 import { notifications, showNotification, updateNotification } from '@mantine/notifications'
-import { mdiCheck, mdiClipboard, mdiClose, mdiContentSaveOutline, mdiDeleteOutline, mdiRefresh } from '@mdi/js'
+import { mdiCheck, mdiClipboard, mdiClose, mdiContentSaveOutline, mdiDeleteOutline, mdiDiceMultiple } from '@mdi/js'
 import { Icon } from '@mdi/react'
 import dayjs from 'dayjs'
+import localizedFormat from 'dayjs/plugin/localizedFormat'
 import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
 import { SwitchLabel } from '@Components/admin/SwitchLabel'
 import { WithGameEditTab } from '@Components/admin/WithGameEditTab'
-import { showErrorNotification, tryGetErrorMsg } from '@Utils/ApiHelper'
+import { getInputNumber, randomInviteCode, showErrorMsg, tryGetErrorMsg } from '@Utils/Shared'
 import { IMAGE_MIME_TYPES } from '@Utils/Shared'
 import { useAdminGame } from '@Hooks/useGame'
 import api, { GameInfoModel } from '@Api'
 import misc from '@Styles/Misc.module.css'
 
-const GenerateRandomCode = () => {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  let code = ''
-  for (let i = 0; i < 24; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)]
-  }
-  return code
-}
+dayjs.extend(localizedFormat)
 
 const GameInfoEdit: FC = () => {
   const { id } = useParams()
@@ -138,9 +131,9 @@ const GameInfoEdit: FC = () => {
         icon: <Icon path={mdiCheck} size={1} />,
       })
       mutate()
-      api.game.mutateGameGamesAll()
+      api.game.mutateGameGames()
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
@@ -158,7 +151,7 @@ const GameInfoEdit: FC = () => {
       })
       navigate('/admin/games')
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     }
   }
 
@@ -223,7 +216,11 @@ const GameInfoEdit: FC = () => {
           min={0}
           required
           value={game?.teamMemberCountLimit}
-          onChange={(e) => game && setGame({ ...game, teamMemberCountLimit: Number(e) })}
+          onChange={(e) => {
+            const number = getInputNumber(e)
+            if (!game || isNaN(number)) return
+            setGame({ ...game, teamMemberCountLimit: number })
+          }}
         />
         <NumberInput
           label={t('admin.content.games.info.container_limit.label')}
@@ -232,9 +229,12 @@ const GameInfoEdit: FC = () => {
           min={0}
           required
           value={game?.containerCountLimit}
-          onChange={(e) => game && setGame({ ...game, containerCountLimit: Number(e) })}
+          onChange={(e) => {
+            const number = getInputNumber(e)
+            if (!game || isNaN(number)) return
+            setGame({ ...game, containerCountLimit: number })
+          }}
         />
-
         <TextInput
           label={t('admin.content.games.info.invite_code.label')}
           description={t('admin.content.games.info.invite_code.description')}
@@ -242,18 +242,20 @@ const GameInfoEdit: FC = () => {
           disabled={disabled}
           onChange={(e) => game && setGame({ ...game, inviteCode: e.target.value })}
           rightSection={
-            <ActionIcon onClick={() => game && setGame({ ...game, inviteCode: GenerateRandomCode() })}>
-              <Icon path={mdiRefresh} size={1} />
+            <ActionIcon onClick={() => game && setGame({ ...game, inviteCode: randomInviteCode() })}>
+              <Icon path={mdiDiceMultiple} size={0.9} />
             </ActionIcon>
           }
         />
-        <DatePickerInput
-          label={t('admin.content.games.info.start_date')}
+        <DateTimePicker
+          label={t('admin.content.games.info.start_time')}
+          size="sm"
           value={start.toDate()}
+          valueFormat="L LT"
           disabled={disabled}
           clearable={false}
           onChange={(e) => {
-            const newDate = dayjs(e).hour(start.hour()).minute(start.minute()).second(start.second())
+            const newDate = dayjs(e)
             setStart(newDate)
             if (newDate && end < newDate) {
               setEnd(newDate.add(2, 'h'))
@@ -261,95 +263,65 @@ const GameInfoEdit: FC = () => {
           }}
           required
         />
-        <TimeInput
-          label={t('admin.content.games.info.start_time')}
-          disabled={disabled}
-          value={start.format('HH:mm:ss')}
-          onChange={(e) => {
-            const newTime = e.target.value.split(':')
-            const newDate = dayjs(start)
-              .hour(Number(newTime[0]))
-              .minute(Number(newTime[1]))
-              .second(Number(newTime[2]))
-              .millisecond(0)
-            setStart(newDate)
-            if (newDate && end < newDate) {
-              setEnd(newDate.add(2, 'h'))
-            }
-          }}
-          withSeconds
-          required
-        />
-        <DatePickerInput
-          label={t('admin.content.games.info.end_date')}
+        <DateTimePicker
+          label={t('admin.content.games.info.end_time')}
+          size="sm"
           disabled={disabled}
           minDate={start.toDate()}
           value={end.toDate()}
+          valueFormat="L LT"
           clearable={false}
           onChange={(e) => {
-            const newDate = dayjs(e).hour(end.hour()).minute(end.minute()).second(end.second())
-            setEnd(newDate)
+            setEnd(dayjs(e))
           }}
           error={end < start}
           required
         />
-        <TimeInput
-          label={t('admin.content.games.info.end_time')}
+        <Switch
           disabled={disabled}
-          value={end.format('HH:mm:ss')}
-          onChange={(e) => {
-            const newTime = e.target.value.split(':')
-            const newDate = dayjs(end)
-              .hour(Number(newTime[0]))
-              .minute(Number(newTime[1]))
-              .second(Number(newTime[2]))
-              .millisecond(0)
-            setEnd(newDate)
-          }}
-          error={end < start}
-          withSeconds
-          required
+          checked={game?.acceptWithoutReview ?? false}
+          classNames={{ root: misc.switchVerticalMiddle }}
+          label={SwitchLabel(
+            t('admin.content.games.info.accept_without_review.label'),
+            t('admin.content.games.info.accept_without_review.description')
+          )}
+          onChange={(e) => game && setGame({ ...game, acceptWithoutReview: e.target.checked })}
+        />
+        <Switch
+          disabled={disabled}
+          checked={game?.practiceMode ?? true}
+          classNames={{ root: misc.switchVerticalMiddle }}
+          label={SwitchLabel(
+            t('admin.content.games.info.practice_mode.label'),
+            t('admin.content.games.info.practice_mode.description')
+          )}
+          onChange={(e) => game && setGame({ ...game, practiceMode: e.target.checked })}
         />
       </SimpleGrid>
-      <Grid>
-        <Grid.Col span={6}>
-          <Textarea
-            label={t('admin.content.games.info.summary.label')}
-            description={t('admin.content.games.info.summary.description')}
-            value={game?.summary}
-            w="100%"
-            autosize
-            disabled={disabled}
-            minRows={3}
-            maxRows={3}
-            onChange={(e) => game && setGame({ ...game, summary: e.target.value })}
-          />
-        </Grid.Col>
-        <Grid.Col span={3}>
-          <Stack gap="xs" h="100%" justify="space-between">
+      <Group grow justify="space-between">
+        <Textarea
+          label={t('admin.content.games.info.summary.label')}
+          description={t('admin.content.games.info.summary.description')}
+          value={game?.summary}
+          w="100%"
+          autosize
+          disabled={disabled}
+          minRows={8}
+          maxRows={8}
+          onChange={(e) => game && setGame({ ...game, summary: e.target.value })}
+        />
+        <Stack gap="0.488125rem">
+          <Group grow justify="space-between">
             <Switch
-              pt="1.5em"
               disabled={disabled}
               checked={game?.writeupRequired ?? false}
+              classNames={{ root: misc.switchVerticalMiddle }}
               label={SwitchLabel(
                 t('admin.content.games.info.writeup_required.label'),
                 t('admin.content.games.info.writeup_required.description')
               )}
               onChange={(e) => game && setGame({ ...game, writeupRequired: e.target.checked })}
             />
-            <Switch
-              disabled={disabled}
-              checked={game?.acceptWithoutReview ?? false}
-              label={SwitchLabel(
-                t('admin.content.games.info.accept_without_review.label'),
-                t('admin.content.games.info.accept_without_review.description')
-              )}
-              onChange={(e) => game && setGame({ ...game, acceptWithoutReview: e.target.checked })}
-            />
-          </Stack>
-        </Grid.Col>
-        <Grid.Col span={3}>
-          <Stack gap="xs">
             <NumberInput
               label={t('admin.content.games.info.writeup_deadline.label')}
               description={t('admin.content.games.info.writeup_deadline.description')}
@@ -357,43 +329,21 @@ const GameInfoEdit: FC = () => {
               min={0}
               required
               value={wpddl}
-              onChange={(e) => setWpddl(Number(e))}
+              onChange={(e) => setWpddl(getInputNumber(e))}
             />
-            <Switch
-              disabled={disabled}
-              checked={game?.practiceMode ?? true}
-              label={SwitchLabel(
-                t('admin.content.games.info.practice_mode.label'),
-                t('admin.content.games.info.practice_mode.description')
-              )}
-              onChange={(e) => game && setGame({ ...game, practiceMode: e.target.checked })}
-            />
-          </Stack>
-        </Grid.Col>
-      </Grid>
-      <Group grow justify="space-between">
-        <Textarea
-          label={t('admin.content.games.info.writeup_instruction')}
-          description={t('admin.content.markdown_support')}
-          value={game?.writeupNote}
-          w="100%"
-          autosize
-          disabled={disabled}
-          minRows={3}
-          maxRows={3}
-          onChange={(e) => game && setGame({ ...game, writeupNote: e.target.value })}
-        />
-        <TagsInput
-          label={t('admin.content.games.info.divisions.label')}
-          description={t('admin.content.games.info.divisions.description')}
-          disabled={disabled}
-          placeholder={t('admin.placeholder.games.divisions')}
-          maxDropdownHeight={300}
-          value={game?.divisions ?? []}
-          classNames={{ input: misc.gameDivEdit }}
-          onChange={(e) => game && setGame({ ...game, divisions: e })}
-          onClear={() => game && setGame({ ...game, divisions: [] })}
-        />
+          </Group>
+          <Textarea
+            label={t('admin.content.games.info.writeup_instruction')}
+            description={t('admin.content.markdown_support')}
+            value={game?.writeupNote}
+            w="100%"
+            autosize
+            disabled={disabled}
+            minRows={4}
+            maxRows={4}
+            onChange={(e) => game && setGame({ ...game, writeupNote: e.target.value })}
+          />
+        </Stack>
       </Group>
       <Grid grow>
         <Grid.Col span={8}>
@@ -410,8 +360,8 @@ const GameInfoEdit: FC = () => {
             w="100%"
             autosize
             disabled={disabled}
-            minRows={9}
-            maxRows={9}
+            minRows={10}
+            maxRows={10}
             onChange={(e) => game && setGame({ ...game, content: e.target.value })}
           />
         </Grid.Col>
@@ -435,9 +385,9 @@ const GameInfoEdit: FC = () => {
             >
               <Center className={misc.noPointerEvents}>
                 {game?.poster ? (
-                  <Image height="209px" fit="contain" src={game.poster} alt="poster" />
+                  <Image height="231px" fit="contain" src={game.poster} alt="poster" />
                 ) : (
-                  <Center h="200px">
+                  <Center h="231px">
                     <Stack gap={0}>
                       <Text size="xl" inline>
                         {t('common.content.drop_zone.content', {

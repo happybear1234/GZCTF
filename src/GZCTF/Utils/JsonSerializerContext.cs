@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Net;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using GZCTF.Models.Internal;
 using GZCTF.Models.Request.Account;
@@ -61,16 +62,34 @@ namespace GZCTF.Utils;
 [JsonSerializable(typeof(ClientCaptchaInfoModel))]
 [JsonSerializable(typeof(TeamInfoModel))]
 [JsonSerializable(typeof(TeamInfoModel[]))]
+[JsonSerializable(typeof(ApiToken))]
+[JsonSerializable(typeof(ApiTokenResponse))]
+[JsonSerializable(typeof(ApiToken[]))]
 internal sealed partial class AppJsonSerializerContext : JsonSerializerContext;
 
 public class DateTimeOffsetJsonConverter : JsonConverter<DateTimeOffset>
 {
     public override DateTimeOffset Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        reader.TokenType == JsonTokenType.Number ?
-            DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64()) : reader.GetDateTimeOffset();
+        reader.TokenType == JsonTokenType.Number
+            ? DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64())
+            : reader.GetDateTimeOffset();
 
     public override void Write(Utf8JsonWriter writer, DateTimeOffset value, JsonSerializerOptions options) =>
         writer.WriteNumberValue(value.ToUnixTimeMilliseconds());
+}
+
+public class IPAddressJsonConverter : JsonConverter<IPAddress>
+{
+    public override IPAddress Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var str = reader.GetString();
+        if (str == null || !IPAddress.TryParse(str, out var address))
+            return IPAddress.Any;
+        return address;
+    }
+
+    public override void Write(Utf8JsonWriter writer, IPAddress value, JsonSerializerOptions options) =>
+        writer.WriteStringValue(value.ToString());
 }
 
 public class OpenApiDateTimeOffsetToUIntMapper : ITypeMapper
@@ -82,6 +101,17 @@ public class OpenApiDateTimeOffsetToUIntMapper : ITypeMapper
     }
 
     public Type MappedType => typeof(DateTimeOffset);
+
+    public bool UseReference => false;
+}
+
+public class OpenApiIPAddressToStringMapper : ITypeMapper
+{
+    public void GenerateSchema(JsonSchema schema, TypeMapperContext context) =>
+        schema.Type = JsonObjectType.String;
+
+    public Type MappedType => typeof(IPAddress);
+
     public bool UseReference => false;
 }
 
@@ -99,12 +129,10 @@ internal class GenericsSystemTextJsonReflectionService : SystemTextJsonReflectio
             return false;
 
         if (jsonConverterAttribute?.ConverterType is Type converterType)
-        {
             return converterType.IsAssignableToTypeName("StringEnumConverter", TypeNameStyle.Name) ||
                    converterType.IsAssignableToTypeName("JsonStringEnumConverter`1", TypeNameStyle.Name) ||
                    converterType.IsAssignableToTypeName("System.Text.Json.Serialization.JsonStringEnumConverter",
                        TypeNameStyle.FullName);
-        }
 
         return false;
     }

@@ -5,7 +5,6 @@ import {
   Center,
   Grid,
   Group,
-  Input,
   Pagination,
   Paper,
   Select,
@@ -18,14 +17,15 @@ import {
   useMantineTheme,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { mdiAccountGroup, mdiMagnify } from '@mdi/js'
+import { mdiAccountGroup, mdiMagnify, mdiFlagOutline } from '@mdi/js'
 import { Icon } from '@mdi/react'
 import cx from 'clsx'
 import dayjs from 'dayjs'
-import React, { FC, useEffect, useState } from 'react'
+import React, { FC, useEffect, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router'
 import { ScoreboardItemModal } from '@Components/ScoreboardItemModal'
+import { ScrollingText } from '@Components/ScrollingText'
 import { useLanguage } from '@Utils/I18n'
 import {
   BloodBonus,
@@ -41,7 +41,7 @@ import misc from '@Styles/Misc.module.css'
 import classes from '@Styles/ScoreboardTable.module.css'
 import tooltipClasses from '@Styles/Tooltip.module.css'
 
-const Widths = [60, 55, 170, 55, 70, 60]
+const Widths = [60, 60, 175, 60, 70, 60]
 const Lefts = Widths.reduce(
   (acc, cur) => {
     acc.push(acc[acc.length - 1] + cur)
@@ -50,7 +50,7 @@ const Lefts = Widths.reduce(
   [0]
 )
 
-const TableHeader = (table: Record<string, ChallengeInfo[]>) => {
+const TableHeader = React.memo((table: Record<string, ChallengeInfo[]>) => {
   const theme = useMantineTheme()
   const { colorScheme } = useMantineColorScheme()
   const { t } = useTranslation()
@@ -127,7 +127,7 @@ const TableHeader = (table: Record<string, ChallengeInfo[]>) => {
       </Table.Tr>
     </Table.Thead>
   )
-}
+})
 
 const TableRow: FC<{
   item: ScoreboardItem
@@ -136,16 +136,35 @@ const TableRow: FC<{
   onOpenDetail: () => void
   iconMap: Map<SubmissionType, PartialIconProps | undefined>
   challenges?: Record<string, ChallengeInfo[]>
-}> = ({ item, challenges, onOpenDetail, iconMap, tableRank, allRank }) => {
+  divisionMap: Map<number, string>
+}> = React.memo(({ item, challenges, onOpenDetail, iconMap, tableRank, allRank, divisionMap }) => {
   const challengeCategoryLabelMap = useChallengeCategoryLabelMap()
   const solved = item.solvedChallenges
   const theme = useMantineTheme()
+  const { colorScheme } = useMantineColorScheme()
   const { locale } = useLanguage()
+  const divisionName =
+    item.divisionId !== undefined && item.divisionId !== null ? divisionMap.get(item.divisionId) : undefined
+
+  const zeroScoreIcon = useMemo(() => {
+    const normalIcon = iconMap.get(SubmissionType.Normal)
+    const color = colorScheme === 'dark' ? theme.colors.gray[4] : theme.colors.gray[6]
+
+    return {
+      path: mdiFlagOutline,
+      size: normalIcon?.size ?? 1,
+      color,
+    }
+  }, [iconMap, theme, colorScheme])
+
+  const totalScore = useMemo(() => {
+    return solved?.reduce((acc, cur) => acc + (cur?.score ?? 0), 0) ?? 0
+  }, [solved])
 
   return (
     <Table.Tr>
       <Table.Td className={cx(classes.mono, classes.left)} style={{ left: Lefts[0] }}>
-        {item.rank}
+        {item.rank || '-'}
       </Table.Td>
       <Table.Td className={cx(classes.mono, classes.left)} style={{ left: Lefts[1] }}>
         {allRank ? item.rank : (item.divisionRank ?? tableRank)}
@@ -163,22 +182,10 @@ const TableRow: FC<{
             {item.name?.slice(0, 1) ?? 'T'}
           </Avatar>
           <Stack gap={0} h="2.5rem" justify="center" w={Widths[2] - 45}>
-            <Input
-              variant="unstyled"
-              value={item.name}
-              readOnly
-              size="sm"
-              __vars={{
-                '--input-height': 'var(--mantine-line-height-sm)',
-              }}
-              classNames={{
-                wrapper: cx(classes.pointer, classes.wapper),
-                input: cx(classes.pointer, classes.input),
-              }}
-            />
-            {!!item.division && (
+            <ScrollingText size="sm" text={item.name || ''} onClick={onOpenDetail} />
+            {!!divisionName && (
               <Text size="xs" c="dimmed" ta="start" truncate className={classes.text}>
-                {item.division}
+                {divisionName}
               </Text>
             )}
           </Stack>
@@ -188,13 +195,14 @@ const TableRow: FC<{
         {solved?.length}
       </Table.Td>
       <Table.Td className={cx(classes.mono, classes.left)} style={{ left: Lefts[4] }}>
-        {solved?.reduce((acc, cur) => acc + (cur?.score ?? 0), 0)}
+        {totalScore}
       </Table.Td>
       {challenges &&
         Object.keys(challenges).map((key) =>
           challenges[key].map((item) => {
             const chal = solved?.find((c) => c.id === item.id)
-            const icon = iconMap.get(chal?.type ?? SubmissionType.Unaccepted)
+            const isZeroScore = chal && chal.type === SubmissionType.Normal && (chal.score ?? 0) === 0
+            const icon = isZeroScore ? zeroScoreIcon : iconMap.get(chal?.type ?? SubmissionType.Unaccepted)
 
             if (!icon) return <Table.Td key={item.id} className={classes.mono} />
 
@@ -210,10 +218,10 @@ const TableRow: FC<{
                       <Text lineClamp={3} fz="xs" className={classes.text}>
                         {item.title}
                       </Text>
-                      <Text c={cate.color} fz="xs" className={classes.text}>
+                      <Text c={cate.color} fz="xs" className={cx(classes.text, classes.mono)}>
                         + {chal?.score} pts
                       </Text>
-                      <Text c="dimmed" fz="xs" className={classes.text}>
+                      <Text c="dimmed" fz="xs" className={cx(classes.text, classes.mono)}>
                         # {dayjs(chal?.time).locale(locale).format('L LTS')}
                       </Text>
                     </Stack>
@@ -229,16 +237,16 @@ const TableRow: FC<{
         )}
     </Table.Tr>
   )
-}
+})
 
 const ITEM_COUNT_PER_PAGE = 30
 
 export interface ScoreboardProps {
-  division: string | null
-  setDivision: (div: string | null) => void
+  divisionId: number | null
+  setDivisionId: (div: number | null) => void
 }
 
-export const ScoreboardTable: FC<ScoreboardProps> = ({ division, setDivision }) => {
+export const ScoreboardTable: FC<ScoreboardProps> = ({ divisionId, setDivisionId }) => {
   const { id } = useParams()
   const numId = parseInt(id ?? '-1')
   const { iconMap } = SubmissionTypeIconMap(1)
@@ -248,31 +256,52 @@ export const ScoreboardTable: FC<ScoreboardProps> = ({ division, setDivision }) 
   const [keyword, setKeyword] = useState('')
   const [debouncedKeyword] = useDebouncedValue(keyword, 400)
 
-  const [filteredList, setFilteredList] = useState<ScoreboardItem[]>([])
-
   const { scoreboard } = useGameScoreboard(numId)
+
+  const divisionMap = useMemo(() => {
+    const map = new Map<number, string>()
+    scoreboard?.divisions?.forEach((div) => {
+      map.set(div.id, div.name.trim())
+    })
+    return map
+  }, [scoreboard?.divisions])
+
+  const divisionOptions = useMemo(
+    () =>
+      (scoreboard?.divisions ?? []).map((div) => ({
+        value: div.id.toString(),
+        label: div.name.trim(),
+      })),
+    [scoreboard?.divisions]
+  )
+
+  const selectValue = useMemo(() => (divisionId === null ? 'all' : divisionId.toString()), [divisionId])
+
+  useEffect(() => {
+    if (divisionId !== null && !divisionMap.has(divisionId)) {
+      setDivisionId(null)
+    }
+  }, [divisionMap, divisionId, setDivisionId])
+
+  const filteredList = useMemo(() => {
+    if (!scoreboard?.items) return []
+
+    if (!!debouncedKeyword && debouncedKeyword.length > 0) {
+      return scoreboard.items.filter((s) => s.name?.toLowerCase().includes(debouncedKeyword.toLowerCase()))
+    }
+
+    if (divisionId !== null) {
+      return scoreboard.items.filter((s) => (s.divisionId ?? null) === divisionId)
+    }
+
+    return scoreboard.items.filter((s) => s.rank > 0)
+  }, [scoreboard, debouncedKeyword, divisionId])
 
   useEffect(() => {
     setPage(1)
-    setDivision('all')
+    setDivisionId(null)
     setKeyword('')
-  }, [id])
-
-  useEffect(() => {
-    if (!scoreboard?.items) return
-
-    if (!!debouncedKeyword && debouncedKeyword.length > 0) {
-      setFilteredList(scoreboard.items.filter((s) => s.name?.toLowerCase().includes(debouncedKeyword.toLowerCase())))
-      return
-    }
-
-    if (division !== 'all') {
-      setFilteredList(scoreboard.items.filter((s) => s.division === division))
-      return
-    }
-
-    setFilteredList(scoreboard.items)
-  }, [scoreboard, debouncedKeyword, division])
+  }, [id, setDivisionId])
 
   const base = (activePage - 1) * ITEM_COUNT_PER_PAGE
   const currentItems = filteredList?.slice(base, base + ITEM_COUNT_PER_PAGE)
@@ -289,7 +318,7 @@ export const ScoreboardTable: FC<ScoreboardProps> = ({ division, setDivision }) 
   }, [scoreboard])
 
   const bloodData = useBonusLabels(bloodBonus)
-  const multiTimeline = scoreboard?.timeLines && Object.keys(scoreboard.timeLines).length > 1
+  const hasDivisionFilter = divisionOptions.length > 0
 
   return (
     <Paper shadow="md" p="md">
@@ -298,19 +327,16 @@ export const ScoreboardTable: FC<ScoreboardProps> = ({ division, setDivision }) 
           <Grid.Col span={3}>
             <Select
               defaultValue="all"
-              data={[
-                { value: 'all', label: t('game.label.score_table.all_teams') },
-                ...Object.keys(scoreboard?.timeLines ?? {})
-                  .filter((k) => k !== 'all')
-                  .map((o) => ({
-                    value: o,
-                    label: o === 'all' ? t('game.label.score_table.rank_total') : o,
-                  })),
-              ]}
-              value={division}
-              readOnly={!multiTimeline}
+              data={[{ value: 'all', label: t('game.label.score_table.all_teams') }, ...divisionOptions]}
+              value={selectValue}
+              readOnly={!hasDivisionFilter}
               onChange={(div) => {
-                setDivision(div)
+                if (!div || div === 'all') {
+                  setDivisionId(null)
+                } else {
+                  const parsed = Number(div)
+                  setDivisionId(Number.isNaN(parsed) ? null : parsed)
+                }
                 setPage(1)
               }}
               leftSection={<Icon path={mdiAccountGroup} size={1} />}
@@ -340,7 +366,7 @@ export const ScoreboardTable: FC<ScoreboardProps> = ({ division, setDivision }) 
                   currentItems?.map((item, idx) => (
                     <TableRow
                       key={base + idx}
-                      allRank={division === 'all'}
+                      allRank={divisionId === null}
                       tableRank={base + idx + 1}
                       item={item}
                       onOpenDetail={() => {
@@ -349,6 +375,7 @@ export const ScoreboardTable: FC<ScoreboardProps> = ({ division, setDivision }) 
                       }}
                       challenges={scoreboard.challenges}
                       iconMap={iconMap}
+                      divisionMap={divisionMap}
                     />
                   ))}
               </Table.Tbody>
@@ -388,6 +415,7 @@ export const ScoreboardTable: FC<ScoreboardProps> = ({ division, setDivision }) 
       </Stack>
       <ScoreboardItemModal
         scoreboard={scoreboard}
+        divisionMap={divisionMap}
         bloodBonusMap={bloodData}
         opened={itemDetailOpened}
         withCloseButton={false}

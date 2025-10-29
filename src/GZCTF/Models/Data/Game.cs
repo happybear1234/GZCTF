@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using GZCTF.Models.Request.Edit;
-using Org.BouncyCastle.Crypto;
+using MemoryPack;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
@@ -10,7 +10,8 @@ using Org.BouncyCastle.Utilities.Encoders;
 
 namespace GZCTF.Models.Data;
 
-public class Game
+[MemoryPackable]
+public partial class Game
 {
     [Key]
     [Required]
@@ -43,6 +44,11 @@ public class Game
     public bool Hidden { get; set; }
 
     /// <summary>
+    /// Whether the game is in practice mode (most operations can still be performed after the game ends)
+    /// </summary>
+    public bool PracticeMode { get; set; } = true;
+
+    /// <summary>
     /// Poster hash
     /// </summary>
     [MaxLength(Limits.FileHashLength)]
@@ -73,11 +79,6 @@ public class Game
     /// </summary>
     [MaxLength(Limits.InviteTokenLength)]
     public string? InviteCode { get; set; }
-
-    /// <summary>
-    /// List of divisions for the game
-    /// </summary>
-    public HashSet<string>? Divisions { get; set; }
 
     /// <summary>
     /// Limit on the number of team members, 0 means no limit
@@ -124,6 +125,7 @@ public class Game
     /// </summary>
     [NotMapped]
     [Required]
+    [MemoryPackIgnore]
     public BloodBonus BloodBonus
     {
         get => BloodBonus.FromValue(BloodBonusValue);
@@ -135,26 +137,31 @@ public class Game
     /// </summary>
     [NotMapped]
     [JsonIgnore]
+    [MemoryPackIgnore]
     public bool IsActive => StartTimeUtc <= DateTimeOffset.Now && DateTimeOffset.Now <= EndTimeUtc;
 
     /// <summary>
     /// Poster URL
     /// </summary>
     [NotMapped]
-    public string? PosterUrl => PosterHash is null ? null : $"/assets/{PosterHash}/poster";
+    [MemoryPackIgnore]
+    public string? PosterUrl => GetPosterUrl(PosterHash);
 
     /// <summary>
     /// Team hash salt
     /// </summary>
     [NotMapped]
+    [MemoryPackIgnore]
     public string TeamHashSalt => $"GZCTF@{PrivateKey}@PK".ToSHA256String();
+
+    internal static string? GetPosterUrl(string? hash) => hash is null ? null : $"/assets/{hash}/poster";
 
     internal void GenerateKeyPair(byte[]? xorKey)
     {
         SecureRandom sr = new();
         Ed25519KeyPairGenerator kpg = new();
         kpg.Init(new Ed25519KeyGenerationParameters(sr));
-        AsymmetricCipherKeyPair kp = kpg.GenerateKeyPair();
+        var kp = kpg.GenerateKeyPair();
         var privateKey = (Ed25519PrivateKeyParameters)kp.Private;
         var publicKey = (Ed25519PublicKeyParameters)kp.Public;
 
@@ -174,15 +181,7 @@ public class Game
         else
             privateKey = new(Codec.Xor(Codec.Base64.DecodeToBytes(PrivateKey), xorKey), 0);
 
-        return DigitalSignature.GenerateSignature(str, privateKey, SignAlgorithm.Ed25519);
-    }
-
-    internal bool IsValidDivision(string? division)
-    {
-        if (Divisions is not { Count: > 0 })
-            return division is null;
-
-        return !string.IsNullOrWhiteSpace(division) && Divisions.Contains(division);
+        return CryptoUtils.GenerateSignature(str, privateKey, SignAlgorithm.Ed25519);
     }
 
     internal Game Update(GameInfoModel model)
@@ -194,7 +193,6 @@ public class Game
         PracticeMode = model.PracticeMode;
         AcceptWithoutReview = model.AcceptWithoutReview;
         InviteCode = model.InviteCode;
-        Divisions = model.Divisions?.ToHashSet() ?? Divisions;
         EndTimeUtc = model.EndTimeUtc;
         StartTimeUtc = model.StartTimeUtc;
         TeamMemberCountLimit = model.TeamMemberCountLimit;
@@ -243,12 +241,12 @@ public class Game
     /// Game teams
     /// </summary>
     [JsonIgnore]
-    public ICollection<Team>? Teams { get; set; }
+    public List<Team>? Teams { get; set; }
 
     /// <summary>
-    /// Whether the game is in practice mode (most operations can still be performed after the game ends)
+    /// List of divisions for the game
     /// </summary>
-    public bool PracticeMode { get; set; } = true;
+    public HashSet<Division>? Divisions { get; set; }
 
     #endregion Db Relationship
 }

@@ -6,9 +6,10 @@ import { Icon } from '@mdi/react'
 import { FC, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { useParams } from 'react-router'
-import { showErrorNotification } from '@Utils/ApiHelper'
+import { showErrorMsg } from '@Utils/Shared'
 import { useEditChallenge } from '@Hooks/useEdit'
 import api from '@Api'
+import misc from '@Styles/Misc.module.css'
 
 export const FlagCreateModal: FC<ModalProps> = (props) => {
   const [disabled, setDisabled] = useState(false)
@@ -49,7 +50,8 @@ export const FlagCreateModal: FC<ModalProps> = (props) => {
       setFlags('')
       props.onClose()
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
+    } finally {
       setDisabled(false)
     }
   }
@@ -57,21 +59,19 @@ export const FlagCreateModal: FC<ModalProps> = (props) => {
   return (
     <Modal {...props}>
       <Stack>
-        <Text>
+        <Text size="sm">
           <Trans i18nKey="admin.content.games.challenges.flag.create" />
         </Text>
         <Textarea
-          value={flags}
           w="100%"
+          value={flags}
           disabled={disabled}
           autosize
           minRows={8}
           maxRows={8}
           onChange={setFlags}
-          wrapperProps={{
-            __vars: {
-              '--input-font-family': 'var(--mantine-font-family-monospace)',
-            },
+          classNames={{
+            input: misc.ffmono,
           }}
         />
         <Group grow m="auto" w="100%">

@@ -30,18 +30,24 @@
   font-family: var(--mantine-font-family-monospace);
 }
 
+.teamCell {
+  max-width: 0;
+  width: auto;
+  overflow: hidden;
+}
+
 .legend {
   position: absolute;
   top: 0;
   left: 0;
   padding: 12px;
+  padding-left: 0;
   float: left;
   z-index: 20;
 }
 
 .text {
   font-size: 0.9em;
-  font-family: var(--mantine-font-family-monospace);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -52,7 +58,7 @@
   }
 }
 
-.wapper {
+.wrapper {
   width: 100%;
   height: var(--mantine-line-height-sm);
 }

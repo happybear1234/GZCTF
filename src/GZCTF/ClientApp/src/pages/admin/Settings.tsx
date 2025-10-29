@@ -26,11 +26,11 @@ import { ColorPreview } from '@Components/ColorPreview'
 import { LogoBox } from '@Components/LogoBox'
 import { AdminPage } from '@Components/admin/AdminPage'
 import { SwitchLabel } from '@Components/admin/SwitchLabel'
-import { showErrorNotification } from '@Utils/ApiHelper'
+import { webCryptoAvailable } from '@Utils/Crypto'
+import { getInputNumber, showErrorMsg } from '@Utils/Shared'
 import { IMAGE_MIME_TYPES } from '@Utils/Shared'
 import { OnceSWRConfig, useCaptchaConfig, useConfig } from '@Hooks/useConfig'
 import api, { AccountPolicy, ConfigEditModel, ContainerPolicy, GlobalConfig } from '@Api'
-import btnClasses from '@Styles/FixedButton.module.css'
 import misc from '@Styles/Misc.module.css'
 
 const Configs: FC = () => {
@@ -73,7 +73,7 @@ const Configs: FC = () => {
       mutateConfig({ ...conf.globalConfig, ...conf.containerPolicy })
       mutateCaptchaConfig()
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
@@ -88,7 +88,7 @@ const Configs: FC = () => {
       mutate({ ...configs, globalConfig: { ...globalConfig, faviconHash: '' } })
       mutateConfig({ ...configs, logoUrl: '' })
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
@@ -99,7 +99,7 @@ const Configs: FC = () => {
   return (
     <AdminPage isLoading={!configs}>
       <Button
-        className={btnClasses.root}
+        className={misc.fixedButton}
         __vars={{
           '--fixed-right': 'calc(0.05 * (100vw - 70px - 2rem) + 1rem)',
         }}
@@ -129,7 +129,7 @@ const Configs: FC = () => {
         <Stack gap="sm">
           <Title order={2}>{t('admin.content.settings.platform.title')}</Title>
           <Divider />
-          <Grid columns={4}>
+          <Grid columns={4} align="center">
             <Grid.Col span={1}>
               <TextInput
                 label={t('admin.content.settings.platform.name.label')}
@@ -156,6 +156,7 @@ const Configs: FC = () => {
             </Grid.Col>
             <Grid.Col span={1}>
               <FileInput
+                size="sm"
                 label={t('admin.content.settings.platform.logo.label')}
                 description={t('admin.content.settings.platform.logo.description')}
                 placeholder={
@@ -170,7 +171,7 @@ const Configs: FC = () => {
                 rightSection={
                   <Tooltip label={t('common.button.reset')}>
                     <ActionIcon onClick={onResetLogo}>
-                      <Icon path={mdiRestore} />
+                      <Icon path={mdiRestore} size={0.85} />
                     </ActionIcon>
                   </Tooltip>
                 }
@@ -200,9 +201,9 @@ const Configs: FC = () => {
                 }}
               />
             </Grid.Col>
-
             <Grid.Col span={1}>
               <ColorInput
+                size="sm"
                 label={t('admin.content.settings.platform.color.label')}
                 description={t('admin.content.settings.platform.color.description')}
                 placeholder={t('common.content.color.custom.placeholder')}
@@ -225,7 +226,7 @@ const Configs: FC = () => {
                 }}
               />
             </Grid.Col>
-            <Grid.Col span={4}>
+            <Grid.Col span={3}>
               <TextInput
                 label={t('admin.content.settings.platform.footer.label')}
                 description={t('admin.content.settings.platform.footer.description')}
@@ -235,6 +236,24 @@ const Configs: FC = () => {
                 onChange={(e) => {
                   setGlobalConfig({ ...globalConfig, footerInfo: e.currentTarget.value })
                 }}
+              />
+            </Grid.Col>
+            <Grid.Col span={1} className={misc.alignCenter}>
+              <Switch
+                checked={globalConfig?.apiEncryption ?? false}
+                disabled={disabled || !webCryptoAvailable}
+                readOnly
+                label={SwitchLabel(
+                  t('admin.content.settings.platform.api_encryption.label'),
+                  t('admin.content.settings.platform.api_encryption.description'),
+                  webCryptoAvailable ? null : t('admin.content.settings.platform.api_encryption.not_available')
+                )}
+                onChange={(e) =>
+                  setGlobalConfig({
+                    ...globalConfig,
+                    apiEncryption: e.currentTarget.checked,
+                  })
+                }
               />
             </Grid.Col>
           </Grid>
@@ -323,10 +342,9 @@ const Configs: FC = () => {
               disabled={disabled}
               value={containerPolicy?.defaultLifetime ?? 120}
               onChange={(e) => {
-                if (typeof e === 'string') return
-
-                const num = e ? Math.min(Math.max(e, 1), 7200) : 120
-                setContainerPolicy({ ...containerPolicy, defaultLifetime: num })
+                const number = getInputNumber(e)
+                if (isNaN(number)) return
+                setContainerPolicy({ ...containerPolicy, defaultLifetime: number })
               }}
             />
             <NumberInput
@@ -338,10 +356,9 @@ const Configs: FC = () => {
               disabled={disabled}
               value={containerPolicy?.extensionDuration ?? 120}
               onChange={(e) => {
-                if (typeof e === 'string') return
-
-                const num = e ? Math.min(Math.max(e, 1), 7200) : 120
-                setContainerPolicy({ ...containerPolicy, extensionDuration: num })
+                const number = getInputNumber(e)
+                if (isNaN(number)) return
+                setContainerPolicy({ ...containerPolicy, extensionDuration: number })
               }}
             />
             <NumberInput
@@ -353,10 +370,9 @@ const Configs: FC = () => {
               disabled={disabled}
               value={containerPolicy?.renewalWindow ?? 10}
               onChange={(e) => {
-                if (typeof e === 'string') return
-
-                const num = e ? Math.min(Math.max(e, 1), 360) : 10
-                setContainerPolicy({ ...containerPolicy, renewalWindow: num })
+                const number = getInputNumber(e)
+                if (isNaN(number)) return
+                setContainerPolicy({ ...containerPolicy, renewalWindow: number })
               }}
             />
             <Switch

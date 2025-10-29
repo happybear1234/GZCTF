@@ -1,4 +1,5 @@
-﻿using GZCTF.Hubs;
+﻿using System.Net;
+using GZCTF.Hubs;
 using GZCTF.Hubs.Clients;
 using GZCTF.Models.Request.Admin;
 using Microsoft.AspNetCore.SignalR;
@@ -13,7 +14,7 @@ public static class SignalRSinkExtension
 {
     public static LoggerConfiguration SignalR(this LoggerSinkConfiguration loggerConfiguration,
         IServiceProvider serviceProvider) =>
-        loggerConfiguration.Sink(new SignalRSink(serviceProvider));
+        loggerConfiguration.Sink(new SignalRSink(serviceProvider), LogEventLevel.Information);
 }
 
 public class SignalRSink(IServiceProvider serviceProvider) : ILogEventSink
@@ -22,14 +23,11 @@ public class SignalRSink(IServiceProvider serviceProvider) : ILogEventSink
 
     public void Emit(LogEvent logEvent)
     {
-        if (logEvent.Level < LogEventLevel.Information)
-            return;
-
         _hubContext ??= serviceProvider.GetRequiredService<IHubContext<AdminHub, IAdminClient>>();
 
-        logEvent.Properties.TryGetValue("UserName", out LogEventPropertyValue? userName);
-        logEvent.Properties.TryGetValue("IP", out LogEventPropertyValue? ip);
-        logEvent.Properties.TryGetValue("Status", out LogEventPropertyValue? status);
+        logEvent.Properties.TryGetValue("UserName", out var userName);
+        logEvent.Properties.TryGetValue("IP", out var ip);
+        logEvent.Properties.TryGetValue("Status", out var status);
 
         try
         {
@@ -39,11 +37,11 @@ public class SignalRSink(IServiceProvider serviceProvider) : ILogEventSink
                     Time = logEvent.Timestamp,
                     Level = logEvent.Level.ToString(),
                     Msg = logEvent.RenderMessageWithExceptions(),
-                    UserName = LogHelper.GetStringValue(userName, "Anonymous"),
-                    IP = LogHelper.GetStringValue(ip),
+                    UserName = LogHelper.GetLogPropertyValue(userName, "Anonymous"),
+                    IP = LogHelper.GetLogPropertyValue<IPAddress>(ip, null),
                     Status = logEvent.Exception is null
-                        ? LogHelper.GetStringValue(status)
-                        : TaskStatus.Failed.ToString(),
+                        ? LogHelper.GetLogPropertyValue(status, TaskStatus.Failed)
+                        : TaskStatus.Failed,
                 }).Wait();
         }
         catch

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Net;
 using Serilog;
 using Serilog.Configuration;
 using Serilog.Core;
@@ -10,7 +11,7 @@ public static class DatabaseSinkExtension
 {
     public static LoggerConfiguration Database(this LoggerSinkConfiguration loggerConfiguration,
         IServiceProvider serviceProvider) =>
-        loggerConfiguration.Sink(new DatabaseSink(serviceProvider));
+        loggerConfiguration.Sink(new DatabaseSink(serviceProvider), LogEventLevel.Information);
 }
 
 public class DatabaseSink : ILogEventSink, IDisposable
@@ -38,29 +39,28 @@ public class DatabaseSink : ILogEventSink, IDisposable
 
     public void Emit(LogEvent logEvent)
     {
-        if (logEvent.Level < LogEventLevel.Information)
-            return;
-
         _logBuffer.Enqueue(ToLogModel(logEvent));
         _resetEvent.Set();
     }
 
     static LogModel ToLogModel(LogEvent logEvent)
     {
-        logEvent.Properties.TryGetValue("UserName", out LogEventPropertyValue? userName);
-        logEvent.Properties.TryGetValue("SourceContext", out LogEventPropertyValue? sourceContext);
-        logEvent.Properties.TryGetValue("IP", out LogEventPropertyValue? ip);
-        logEvent.Properties.TryGetValue("Status", out LogEventPropertyValue? status);
+        logEvent.Properties.TryGetValue("UserName", out var userName);
+        logEvent.Properties.TryGetValue("SourceContext", out var sourceContext);
+        logEvent.Properties.TryGetValue("IP", out var ip);
+        logEvent.Properties.TryGetValue("Status", out var status);
 
         return new LogModel
         {
             TimeUtc = logEvent.Timestamp.ToUniversalTime(),
             Level = logEvent.Level.ToString(),
             Message = logEvent.RenderMessageWithExceptions(),
-            UserName = LogHelper.GetStringValue(userName, "Anonymous"),
-            Logger = LogHelper.GetStringValue(sourceContext, "Unknown"),
-            RemoteIP = LogHelper.GetStringValue(ip),
-            Status = logEvent.Exception is null ? LogHelper.GetStringValue(status) : TaskStatus.Failed.ToString(),
+            UserName = LogHelper.GetLogPropertyValue(userName, "Anonymous"),
+            Logger = LogHelper.GetLogPropertyValue<string>(sourceContext, "Unknown") ?? string.Empty,
+            RemoteIP = LogHelper.GetLogPropertyValue<IPAddress>(ip, null),
+            Status = logEvent.Exception is null
+                ? LogHelper.GetLogPropertyValue(status, TaskStatus.Failed)
+                : TaskStatus.Failed,
             Exception = logEvent.Exception?.ToString()
         };
     }
@@ -76,24 +76,35 @@ public class DatabaseSink : ILogEventSink, IDisposable
                 await _resetEvent.WaitAsync(token);
                 _resetEvent.Reset();
 
-                while (_logBuffer.TryDequeue(out LogModel? logModel))
+                while (_logBuffer.TryDequeue(out var logModel))
                     lockedLogBuffer.Add(logModel);
 
                 if (lockedLogBuffer.Count <= 50 && DateTimeOffset.Now - _lastFlushTime <= TimeSpan.FromSeconds(10))
                     continue;
 
-                await using AsyncServiceScope scope = _serviceProvider.CreateAsyncScope();
+                await using var scope = _serviceProvider.CreateAsyncScope();
 
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 await dbContext.Logs.AddRangeAsync(lockedLogBuffer, token);
+                var affectedRows = 0;
 
                 try
                 {
-                    await dbContext.SaveChangesAsync(token);
+                    affectedRows = await dbContext.SaveChangesAsync(token);
+                }
+                catch (Exception ex)
+                {
+                    var logger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseSink>>();
+                    logger.LogErrorMessage(ex);
                 }
                 finally
                 {
-                    lockedLogBuffer.Clear();
+                    if (affectedRows > 0)
+                    {
+                        // If some logs were saved, we need to remove them from the buffer
+                        lockedLogBuffer.RemoveAll(logModel => logModel.Id != 0);
+                    }
+
                     _lastFlushTime = DateTimeOffset.Now;
                 }
             }

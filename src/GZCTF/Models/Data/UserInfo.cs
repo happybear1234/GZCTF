@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Net;
+using System.Text.Json.Serialization;
 using GZCTF.Models.Request.Account;
 using GZCTF.Models.Request.Admin;
 using MemoryPack;
@@ -26,9 +27,8 @@ public partial class UserInfo : IdentityUser<Guid>
     /// <summary>
     /// User's recent IP address
     /// </summary>
-    [MaxLength(Limits.MaxIPLength)]
-    [ProtectedPersonalData]
-    public string IP { get; set; } = "0.0.0.0";
+    [IPAddressFormatter]
+    public IPAddress IP { get; set; } = IPAddress.Any;
 
     /// <summary>
     /// User's last sign-in time
@@ -82,12 +82,12 @@ public partial class UserInfo : IdentityUser<Guid>
     {
         LastVisitedUtc = DateTimeOffset.UtcNow;
 
-        IPAddress? remoteAddress = context.Connection.RemoteIpAddress;
+        var remoteAddress = context.Connection.RemoteIpAddress;
 
         if (remoteAddress is null)
             return;
 
-        IP = remoteAddress.ToString();
+        IP = remoteAddress;
     }
 
     internal void UpdateUserInfo(AdminUserInfoModel model)

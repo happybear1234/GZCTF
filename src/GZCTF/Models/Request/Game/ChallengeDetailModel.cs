@@ -45,18 +45,37 @@ public class ChallengeDetailModel
     /// <summary>
     /// Flag context
     /// </summary>
-    public ClientFlagContext Context { get; set; } = default!;
+    public ClientFlagContext Context { get; set; } = null!;
 
-    internal static ChallengeDetailModel FromInstance(GameInstance gameInstance) =>
+    /// <summary>
+    /// Maximum number of attempts allowed (0 = no limit)
+    /// </summary>
+    public int Limit { get; set; }
+
+    /// <summary>
+    /// Current attempt count
+    /// </summary>
+    public int Attempts { get; set; }
+
+    /// <summary>
+    /// Deadline of the challenge, null means no deadline
+    /// </summary>
+    public DateTimeOffset? Deadline { get; set; }
+
+    internal static ChallengeDetailModel FromInstance(GameInstance gameInstance, int attemptCount,
+        ChallengeInfo? scoreboardChallenge = null) =>
         new()
         {
             Id = gameInstance.Challenge.Id,
             Content = gameInstance.Challenge.Content,
             Hints = gameInstance.Challenge.Hints,
-            Score = gameInstance.Challenge.CurrentScore,
+            Score = scoreboardChallenge?.Score ?? gameInstance.Challenge.CurrentScore,
             Category = gameInstance.Challenge.Category,
             Title = gameInstance.Challenge.Title,
             Type = gameInstance.Challenge.Type,
+            Limit = gameInstance.Challenge.SubmissionLimit,
+            Deadline = gameInstance.Challenge.DeadlineUtc,
+            Attempts = attemptCount,
             Context = new()
             {
                 InstanceEntry = gameInstance.Container?.Entry,

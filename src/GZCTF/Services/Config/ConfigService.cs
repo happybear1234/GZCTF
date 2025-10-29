@@ -4,6 +4,7 @@ using System.Reflection;
 using GZCTF.Models.Internal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Options;
 using ConfigModel = GZCTF.Models.Data.Config;
 
 namespace GZCTF.Services.Config;
@@ -12,9 +13,12 @@ public class ConfigService(
     AppDbContext context,
     IDistributedCache cache,
     ILogger<ConfigService> logger,
+    IOptionsSnapshot<GlobalConfig> globalConfig,
+    IOptionsSnapshot<ManagedConfig> managedConfig,
     IConfiguration configuration) : IConfigService
 {
     readonly IConfigurationRoot? _configuration = configuration as IConfigurationRoot;
+    readonly byte[] _xorKey = configuration["XorKey"]?.ToUTF8Bytes() ?? [];
 
     public Task SaveConfig([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type,
         object? value, CancellationToken token = default) =>
@@ -24,17 +28,20 @@ public class ConfigService(
         CancellationToken token = default) where T : class =>
         SaveConfigSet(GetConfigs(config), token);
 
+
+    public byte[] GetXorKey() => _xorKey;
+
     public void ReloadConfig() => _configuration?.Reload();
 
     public async Task SaveConfigSet(HashSet<ConfigModel> configs, CancellationToken token = default)
     {
-        Dictionary<string, ConfigModel> dbConfigs = await context.Configs
+        var dbConfigs = await context.Configs
             .ToDictionaryAsync(c => c.ConfigKey, c => c, token);
         HashSet<string> cacheKeys = [];
 
-        foreach (ConfigModel conf in configs)
+        foreach (var conf in configs)
         {
-            if (dbConfigs.TryGetValue(conf.ConfigKey, out ConfigModel? dbConf))
+            if (dbConfigs.TryGetValue(conf.ConfigKey, out var dbConf))
             {
                 if (dbConf.Value == conf.Value)
                     continue;
@@ -45,7 +52,7 @@ public class ConfigService(
                     cacheKeys.UnionWith(conf.CacheKeys);
 
                 logger.SystemLog(
-                    Program.StaticLocalizer[nameof(Resources.Program.Config_GlobalConfigUpdated), conf.ConfigKey,
+                    StaticLocalizer[nameof(Resources.Program.Config_GlobalConfigUpdated), conf.ConfigKey,
                         conf.Value ?? "null"],
                     TaskStatus.Success, LogLevel.Debug);
             }
@@ -56,20 +63,67 @@ public class ConfigService(
 
                 await context.Configs.AddAsync(conf, token);
 
+                string configValue = IsSensitiveConfig(conf.ConfigKey)
+                    ? MaskSensitiveData(conf.Value)
+                    : conf.Value ?? "Null";
+
                 logger.SystemLog(
-                    Program.StaticLocalizer[nameof(Resources.Program.Config_GlobalConfigAdded), conf.ConfigKey,
-                        conf.Value ?? "null"],
+                    StaticLocalizer[nameof(Resources.Program.Config_GlobalConfigAdded), conf.ConfigKey,
+                        configValue],
                     TaskStatus.Success, LogLevel.Debug);
             }
         }
 
         await context.SaveChangesAsync(token);
-        _configuration?.Reload();
+        ReloadConfig();
 
         // flush cache
         foreach (var key in cacheKeys)
             await cache.RemoveAsync(key, token);
     }
+
+    static bool IsSensitiveConfig(string key) =>
+        key.EndsWith("PrivateKey", StringComparison.Ordinal);
+
+    static string MaskSensitiveData(string? value)
+    {
+        var length = value?.Length ?? 6;
+        if (string.IsNullOrEmpty(value) || length <= 8)
+            return new string('*', length);
+
+        return $"{value[..4]}{new string('*', length - 8)}{value[^4..]}";
+    }
+
+    public async Task UpdateApiTokenKeyPair(CancellationToken token = default)
+    {
+        var managed = managedConfig.Value;
+        managed.ApiToken.RegenerateKeys(_xorKey);
+        await SaveConfig(managed, token);
+    }
+
+    public async Task<SignatureContext> GetApiTokenContext(CancellationToken token = default)
+    {
+        var managed = managedConfig.Value;
+
+        if (!string.IsNullOrEmpty(managed.ApiToken.PrivateKey) && !string.IsNullOrEmpty(managed.ApiToken.PublicKey))
+            return new(managedConfig.Value.ApiToken, _xorKey);
+
+        managed.ApiToken.RegenerateKeys(_xorKey);
+        await SaveConfig(managed, token);
+        return new(managedConfig.Value.ApiToken, _xorKey);
+    }
+
+    public async Task UpdateApiEncryptionKey(CancellationToken token = default)
+    {
+        var managed = managedConfig.Value;
+        managed.ApiEncryption.RegenerateKeys(_xorKey);
+        await SaveConfig(managed, token);
+    }
+
+    public string? DecryptApiData(string cipherText) =>
+        globalConfig.Value.ApiEncryption
+            ? managedConfig.Value.ApiEncryption.Decrypt(cipherText, _xorKey)
+            : cipherText;
 
     static void MapConfigsInternal(string key, HashSet<ConfigModel> configs, PropertyInfo info, object? value)
     {
@@ -77,11 +131,11 @@ public class ConfigService(
         if (value is null || info.GetCustomAttribute<AutoSaveIgnoreAttribute>() != null)
             return;
 
-        Type type = info.PropertyType;
+        var type = info.PropertyType;
         if (type.IsArray || IsArrayLikeInterface(type))
-            throw new NotSupportedException(Program.StaticLocalizer[nameof(Resources.Program.Config_TypeNotSupported)]);
+            throw new NotSupportedException(StaticLocalizer[nameof(Resources.Program.Config_TypeNotSupported)]);
 
-        TypeConverter converter = TypeDescriptor.GetConverter(type);
+        var converter = TypeDescriptor.GetConverter(type);
 
         if (type == typeof(string) || type.IsValueType)
         {
@@ -92,7 +146,7 @@ public class ConfigService(
         }
         else if (type.IsClass)
         {
-            foreach (PropertyInfo item in type.GetProperties())
+            foreach (var item in type.GetProperties())
                 MapConfigsInternal($"{key}:{item.Name}", configs, item, item.GetValue(value));
         }
     }
@@ -103,7 +157,7 @@ public class ConfigService(
     {
         HashSet<ConfigModel> configs = [];
 
-        foreach (PropertyInfo item in type.GetProperties())
+        foreach (var item in type.GetProperties())
             MapConfigsInternal($"{type.Name}:{item.Name}", configs, item, item.GetValue(value));
 
         return configs;
@@ -114,9 +168,9 @@ public class ConfigService(
     T>(T config) where T : class
     {
         HashSet<ConfigModel> configs = [];
-        Type type = typeof(T);
+        var type = typeof(T);
 
-        foreach (PropertyInfo item in type.GetProperties())
+        foreach (var item in type.GetProperties())
             MapConfigsInternal($"{type.Name}:{item.Name}", configs, item, item.GetValue(config));
 
         return configs;
@@ -127,7 +181,7 @@ public class ConfigService(
         if (!type.IsInterface || !type.IsConstructedGenericType)
             return false;
 
-        Type genericTypeDefinition = type.GetGenericTypeDefinition();
+        var genericTypeDefinition = type.GetGenericTypeDefinition();
         return genericTypeDefinition == typeof(IEnumerable<>)
                || genericTypeDefinition == typeof(ICollection<>)
                || genericTypeDefinition == typeof(IList<>)

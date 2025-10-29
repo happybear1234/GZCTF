@@ -1,4 +1,9 @@
-﻿using System.Net;
+﻿// SPDX-License-Identifier: LicenseRef-GZCTF-Restricted
+// Copyright (C) 2022-2025 GZTimeWalker
+// Restricted Component - NOT under AGPLv3.
+// See licenses/LicenseRef-GZCTF-Restricted.txt
+
+using System.Net;
 using GZCTF.Models.Internal;
 
 namespace GZCTF.Services.Container.Manager;
@@ -6,17 +11,17 @@ namespace GZCTF.Services.Container.Manager;
 public interface IContainerManager
 {
     /// <summary>
-    /// 创建容器
+    /// Create a container
     /// </summary>
-    /// <param name="config">容器配置</param>
+    /// <param name="config">container configuration</param>
     /// <param name="token"></param>
     /// <returns></returns>
     public Task<Models.Data.Container?> CreateContainerAsync(ContainerConfig config, CancellationToken token = default);
 
     /// <summary>
-    /// 销毁容器
+    /// Destroy a container
     /// </summary>
-    /// <param name="container">容器对象</param>
+    /// <param name="container">container</param>
     /// <param name="token"></param>
     /// <returns></returns>
     public Task DestroyContainerAsync(Models.Data.Container container, CancellationToken token = default);
@@ -33,9 +38,9 @@ static class ContainerManagerLogHelper
         string responseLogFormatKey
     )
     {
-        logger.SystemLog(Program.StaticLocalizer[statusLogFormatKey, container, status],
+        logger.SystemLog(StaticLocalizer[statusLogFormatKey, container, status],
             TaskStatus.Failed, LogLevel.Warning);
-        logger.SystemLog(Program.StaticLocalizer[responseLogFormatKey, container, body],
+        logger.SystemLog(StaticLocalizer[responseLogFormatKey, container, body],
             TaskStatus.Failed, LogLevel.Error);
     }
 

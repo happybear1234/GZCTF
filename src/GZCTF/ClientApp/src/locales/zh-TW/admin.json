@@ -22,6 +22,7 @@
         "delete": "刪除 flag",
         "save": "保存 flag 模版"
       },
+      "flush_scoreboard": "刷新計分板",
       "hint": {
         "add": "添加提示"
       },
@@ -32,8 +33,11 @@
       "test_container": {
         "create": "創建測試容器",
         "destroy": "銷毀測試容器"
-      },
-      "update_accept_count": "更新解題計數"
+      }
+    },
+    "divisions": {
+      "edit": "編輯分組",
+      "new": "新建分組"
     },
     "games": {
       "challenges": {
@@ -90,6 +94,10 @@
           "description": "所有動態附件均會以此文件名下載",
           "label": "全局附件名"
         },
+        "blood_bonus": {
+          "description": "啟用此挑戰的三血加分",
+          "label": "三血獎勵"
+        },
         "bonus": {
           "description": "三血獎勵加成是指當一個題目被前三個隊伍解出時，每個隊伍可以得到的分值獎勵。三血的獎勵基於題目的當前分值，並以一個固定百分比的形式累加至該隊伍的得分中。",
           "first_blood": "一血獎勵 (%)",
@@ -102,14 +110,14 @@
           "description": "乘以 0.1 即為 CPU 核心數",
           "label": "CPU 限制 (0.1 CPUs)"
         },
+        "deadline": {
+          "label": "截止時間",
+          "placeholder": "無截止時間"
+        },
         "delete": "你確定要刪除題目 {{name}} 嗎？",
         "description": "題目描述",
         "difficulty": "難度係數",
         "disable": "你確定要禁用題目 {{name}} 嗎？",
-        "blood_bonus": {
-          "description": "啟用此挑戰的三血加分",
-          "label": "三血獎勵"
-        },
         "empty": {
           "description": "點擊右上角創建第一個題目",
           "title": "Ouch! 這個比賽還沒有題目"
@@ -155,6 +163,11 @@
           "description": "限制存儲空間，含鏡像大小",
           "label": "存儲限制 (MB)"
         },
+        "submission_limit": {
+          "description": "0 表示不限制",
+          "label": "最大提交次數",
+          "placeholder": "不限制"
+        },
         "title": "題目標題",
         "traffic_capture": {
           "description": "捕獲隊伍解題流量，需要開啟平臺代理",
@@ -164,6 +177,71 @@
           "description": "創建後不可更改",
           "label": "題目類型"
         }
+      },
+      "divisions": {
+        "default_permission_label": "預設權限",
+        "delete_confirm": "刪除分組 {{name}}？",
+        "empty": {
+          "description": "點擊「新建分組」以建立第一個分組",
+          "title": "暫無分組"
+        },
+        "form": {
+          "challenge_overrides": {
+            "description": "選擇要自訂權限的題目",
+            "label": "題目權限覆寫",
+            "placeholder": "搜尋欲覆寫權限的題目"
+          },
+          "default_permissions": {
+            "description": "適用於此分組隊伍的預設權限",
+            "label": "預設權限"
+          },
+          "invite_code": {
+            "description": "覆寫比賽層級的邀請碼",
+            "label": "邀請碼"
+          },
+          "name": {
+            "description": "分組的名稱。",
+            "label": "分組名稱"
+          }
+        },
+        "no_permission": "尚未配置權限",
+        "override_label": "題目權限覆寫",
+        "permissions": {
+          "affect_dynamic_score": {
+            "description": "影響動態分值計算",
+            "label": "影響動態分值"
+          },
+          "all": "全部權限",
+          "get_blood": {
+            "description": "允許獲得三血獎勵積分",
+            "label": "三血加分"
+          },
+          "get_score": {
+            "description": "允許此分組的隊伍獲得題目分數",
+            "label": "獲取分數"
+          },
+          "join_game": {
+            "description": "允許此分組的用戶加入比賽",
+            "label": "加入比賽"
+          },
+          "rank_overall": {
+            "description": "允許顯示於總排行榜",
+            "label": "總榜排名"
+          },
+          "require_review": {
+            "description": "隊伍報名需要手動審核",
+            "label": "需要審核"
+          },
+          "submit_flags": {
+            "description": "允許提交 flag",
+            "label": "提交 flag"
+          },
+          "view_challenge": {
+            "description": "允許瀏覽題目描述",
+            "label": "查看題目"
+          }
+        },
+        "unknown_challenge": "題目 #{{id}}"
       },
       "info": {
         "accept_without_review": {
@@ -230,6 +308,7 @@
         },
         "participation": {
           "joined": "已報名",
+          "no_division": "未分組",
           "not_joined": "未報名",
           "stats": "{{count}}/{{total}} 已報名",
           "update": "確定要設為 \"{{status}}\" 嗎？"
@@ -296,6 +375,11 @@
         "title": "容器策略"
       },
       "platform": {
+        "api_encryption": {
+          "description": "在一些 API 中加密敏感數據",
+          "label": "啟用 API 加密",
+          "not_available": "Web Crypto API 不可用"
+        },
         "color": {
           "description": "自定義平臺顏色，用於生成主題色盤",
           "label": "平臺顏色"
@@ -393,8 +477,13 @@
         "updated": "題目已更新"
       },
       "created": "比賽已創建",
+      "divisions": {
+        "created": "分組已創建",
+        "deleted": "分組已刪除",
+        "invite_copied": "邀請碼已複製到剪貼板",
+        "updated": "分組已更新"
+      },
       "info": {
-        "accept_count_updated": "解題數量已刷新",
         "deleted": "比賽已刪除",
         "info_updated": "比賽信息已更新",
         "poster": {
@@ -402,7 +491,8 @@
           "uploaded": "海報上傳成功",
           "uploading": "正在上傳海報..."
         },
-        "public_key_copied": "公鑰已複製到剪貼板"
+        "public_key_copied": "公鑰已複製到剪貼板",
+        "scoreboard_flushed": "計分板快取已刷新"
       },
       "instances": {
         "created": "實例已創建",
@@ -486,6 +576,7 @@
   "tab": {
     "games": {
       "challenges": "題目管理",
+      "divisions": "分組管理",
       "index": "比賽管理",
       "info": "信息編輯",
       "notices": "比賽公告",

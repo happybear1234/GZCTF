@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -18,27 +17,30 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) :
         TypeInfoResolver = new AppJsonSerializerContext()
     };
 
-    public DbSet<Post> Posts { get; set; } = default!;
-    public DbSet<Game> Games { get; set; } = default!;
-    public DbSet<Team> Teams { get; set; } = default!;
-    public DbSet<LogModel> Logs { get; set; } = default!;
-    public DbSet<Config> Configs { get; set; } = default!;
-    public DbSet<LocalFile> Files { get; set; } = default!;
-    public DbSet<CheatInfo> CheatInfo { get; set; } = default!;
-    public DbSet<Container> Containers { get; set; } = default!;
-    public DbSet<GameEvent> GameEvents { get; set; } = default!;
-    public DbSet<Submission> Submissions { get; set; } = default!;
-    public DbSet<Attachment> Attachments { get; set; } = default!;
-    public DbSet<GameNotice> GameNotices { get; set; } = default!;
-    public DbSet<FlagContext> FlagContexts { get; set; } = default!;
-    public DbSet<Participation> Participations { get; set; } = default!;
-    public DbSet<GameInstance> GameInstances { get; set; } = default!;
-    public DbSet<GameChallenge> GameChallenges { get; set; } = default!;
-    public DbSet<ExerciseInstance> ExerciseInstances { get; set; } = default!;
-    public DbSet<ExerciseChallenge> ExerciseChallenges { get; set; } = default!;
-    public DbSet<UserParticipation> UserParticipations { get; set; } = default!;
-    public DbSet<ExerciseDependency> ExerciseDependencies { get; set; } = default!;
-    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = default!;
+    public DbSet<Post> Posts { get; set; } = null!;
+    public DbSet<Game> Games { get; set; } = null!;
+    public DbSet<Team> Teams { get; set; } = null!;
+    public DbSet<Config> Configs { get; set; } = null!;
+    public DbSet<LogModel> Logs { get; set; } = null!;
+    public DbSet<Division> Divisions { get; set; } = null!;
+    public DbSet<LocalFile> Files { get; set; } = null!;
+    public DbSet<CheatInfo> CheatInfo { get; set; } = null!;
+    public DbSet<Container> Containers { get; set; } = null!;
+    public DbSet<GameEvent> GameEvents { get; set; } = null!;
+    public DbSet<Submission> Submissions { get; set; } = null!;
+    public DbSet<Attachment> Attachments { get; set; } = null!;
+    public DbSet<GameNotice> GameNotices { get; set; } = null!;
+    public DbSet<FlagContext> FlagContexts { get; set; } = null!;
+    public DbSet<Participation> Participations { get; set; } = null!;
+    public DbSet<GameInstance> GameInstances { get; set; } = null!;
+    public DbSet<GameChallenge> GameChallenges { get; set; } = null!;
+    public DbSet<FirstSolve> FirstSolves { get; set; } = null!;
+    public DbSet<ExerciseInstance> ExerciseInstances { get; set; } = null!;
+    public DbSet<ExerciseChallenge> ExerciseChallenges { get; set; } = null!;
+    public DbSet<UserParticipation> UserParticipations { get; set; } = null!;
+    public DbSet<ExerciseDependency> ExerciseDependencies { get; set; } = null!;
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
+    public DbSet<ApiToken> ApiTokens { get; set; } = null!;
 
     static ValueConverter<T?, string> GetJsonConverter<T>() where T : class, new() =>
         new(
@@ -57,10 +59,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) :
     {
         base.OnModelCreating(builder);
 
-        ValueConverter<List<string>?, string> listConverter = GetJsonConverter<List<string>>();
-        ValueConverter<HashSet<string>?, string> setConverter = GetJsonConverter<HashSet<string>>();
-        ValueComparer<List<string>> listComparer = GetEnumerableComparer<List<string>, string>();
-        ValueComparer<HashSet<string>> setComparer = GetEnumerableComparer<HashSet<string>, string>();
+        var listConverter = GetJsonConverter<List<string>>();
+        var setConverter = GetJsonConverter<HashSet<string>>();
+        var listComparer = GetEnumerableComparer<List<string>, string>();
+        var setComparer = GetEnumerableComparer<HashSet<string>, string>();
 
         builder.Entity<UserInfo>(entity =>
         {
@@ -81,11 +83,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) :
 
         builder.Entity<Game>(entity =>
         {
-            entity.Property(e => e.Divisions)
-                .HasConversion(setConverter)
-                .Metadata
-                .SetValueComparer(setComparer);
-
             entity.HasMany(e => e.GameEvents)
                 .WithOne(e => e.Game)
                 .HasForeignKey(e => e.GameId);
@@ -99,6 +96,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) :
                 .HasForeignKey(e => e.GameId);
 
             entity.HasMany(e => e.Submissions)
+                .WithOne(e => e.Game)
+                .HasForeignKey(e => e.GameId);
+
+            entity.HasMany(e => e.Divisions)
                 .WithOne(e => e.Game)
                 .HasForeignKey(e => e.GameId);
 
@@ -155,12 +156,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) :
                 .WithOne(e => e.Participation)
                 .HasForeignKey(e => e.ParticipationId);
 
+            entity.HasMany(e => e.FirstSolves)
+                .WithOne(e => e.Participation)
+                .HasForeignKey(e => e.ParticipationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasMany(e => e.Members)
                 .WithOne(e => e.Participation)
                 .HasForeignKey(e => e.ParticipationId);
 
             entity.HasOne(e => e.Writeup)
                 .WithMany();
+
+            entity.HasOne(e => e.Division)
+                .WithMany()
+                .HasForeignKey(e => e.DivisionId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             entity.Navigation(e => e.Game).AutoInclude();
             entity.Navigation(e => e.Team).AutoInclude();
@@ -241,6 +252,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) :
                 .WithOne(e => e.GameChallenge)
                 .HasForeignKey(e => e.ChallengeId);
 
+            entity.HasMany(e => e.FirstSolves)
+                .WithOne(e => e.Challenge)
+                .HasForeignKey(e => e.ChallengeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasOne(e => e.Attachment)
                 .WithMany()
                 .HasForeignKey(e => e.AttachmentId)
@@ -255,6 +271,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) :
             entity.Navigation(e => e.TestContainer).AutoInclude();
 
             entity.HasIndex(e => e.GameId);
+
+            entity.HasMany(e => e.DivisionConfigs)
+                .WithOne(e => e.Challenge)
+                .HasForeignKey(e => e.ChallengeId);
+        });
+
+        builder.Entity<Division>(entity =>
+        {
+            entity.HasMany(e => e.ChallengeConfigs)
+                .WithOne(e => e.Division)
+                .HasForeignKey(e => e.DivisionId);
         });
 
         builder.Entity<ExerciseChallenge>(entity =>
@@ -371,6 +398,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) :
             entity.HasKey(e => e.SubmissionId);
         });
 
+        builder.Entity<FirstSolve>(entity =>
+        {
+            entity.HasKey(e => new { e.ParticipationId, e.ChallengeId });
+
+            entity.HasOne(e => e.Submission)
+                .WithMany()
+                .HasForeignKey(e => e.SubmissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         builder.Entity<UserParticipation>(entity =>
         {
             entity.HasOne(e => e.User)
@@ -386,6 +423,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) :
                 .HasForeignKey(e => e.GameId);
 
             entity.HasKey(e => new { e.GameId, e.TeamId, e.UserId });
+        });
+
+        builder.Entity<ApiToken>(entity =>
+        {
+            entity.HasOne(e => e.Creator)
+                .WithMany()
+                .HasForeignKey(e => e.CreatorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<LogModel>(entity =>
+        {
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(Limits.MaxLogStatusLength);
         });
     }
 }

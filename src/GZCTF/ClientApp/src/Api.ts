@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint:disable */
+// @ts-nocheck
 /*
  * ---------------------------------------------------------------
  * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
@@ -8,6 +9,140 @@
  * ## SOURCE: https://github.com/acacode/swagger-typescript-api ##
  * ---------------------------------------------------------------
  */
+
+export enum CaptchaProvider {
+  None = "None",
+  HashPow = "HashPow",
+  CloudflareTurnstile = "CloudflareTurnstile",
+}
+
+export enum ContainerPortMappingType {
+  Default = "Default",
+  PlatformProxy = "PlatformProxy",
+}
+
+/** Judgement result */
+export enum AnswerResult {
+  FlagSubmitted = "FlagSubmitted",
+  Accepted = "Accepted",
+  WrongAnswer = "WrongAnswer",
+  CheatDetected = "CheatDetected",
+  NotFound = "NotFound",
+}
+
+/** Game event type */
+export enum EventType {
+  Normal = "Normal",
+  ContainerStart = "ContainerStart",
+  ContainerDestroy = "ContainerDestroy",
+  FlagSubmit = "FlagSubmit",
+  CheatDetected = "CheatDetected",
+}
+
+/** Submission type */
+export enum SubmissionType {
+  Unaccepted = "Unaccepted",
+  FirstBlood = "FirstBlood",
+  SecondBlood = "SecondBlood",
+  ThirdBlood = "ThirdBlood",
+  Normal = "Normal",
+}
+
+/** Container status */
+export enum ContainerStatus {
+  Pending = "Pending",
+  Running = "Running",
+  Destroyed = "Destroyed",
+}
+
+export enum FileType {
+  None = "None",
+  Local = "Local",
+  Remote = "Remote",
+}
+
+export enum ChallengeType {
+  StaticAttachment = "StaticAttachment",
+  StaticContainer = "StaticContainer",
+  DynamicAttachment = "DynamicAttachment",
+  DynamicContainer = "DynamicContainer",
+}
+
+/** Game participant permission */
+export enum GamePermission {
+  JoinGame = 1,
+  RankOverall = 2,
+  RequireReview = 4,
+  ViewChallenge = 256,
+  SubmitFlags = 512,
+  GetScore = 1024,
+  GetBlood = 2048,
+  AffectDynamicScore = 4096,
+  All = 2147483647,
+}
+
+/** Game announcement type */
+export enum NoticeType {
+  Normal = "Normal",
+  FirstBlood = "FirstBlood",
+  SecondBlood = "SecondBlood",
+  ThirdBlood = "ThirdBlood",
+  NewHint = "NewHint",
+  NewChallenge = "NewChallenge",
+}
+
+/** Challenge category */
+export enum ChallengeCategory {
+  Misc = "Misc",
+  Crypto = "Crypto",
+  Pwn = "Pwn",
+  Web = "Web",
+  Reverse = "Reverse",
+  Blockchain = "Blockchain",
+  Forensics = "Forensics",
+  Hardware = "Hardware",
+  Mobile = "Mobile",
+  PPC = "PPC",
+  AI = "AI",
+  Pentest = "Pentest",
+  OSINT = "OSINT",
+}
+
+export enum ParticipationStatus {
+  Pending = "Pending",
+  Accepted = "Accepted",
+  Rejected = "Rejected",
+  Suspended = "Suspended",
+  Unsubmitted = "Unsubmitted",
+}
+
+/** Task execution status */
+export enum TaskStatus {
+  Success = "Success",
+  Failed = "Failed",
+  Duplicate = "Duplicate",
+  Denied = "Denied",
+  NotFound = "NotFound",
+  Exit = "Exit",
+  Unhealthy = "Unhealthy",
+  Degraded = "Degraded",
+  Pending = "Pending",
+}
+
+/** User role enumeration */
+export enum Role {
+  Banned = "Banned",
+  User = "User",
+  Monitor = "Monitor",
+  Admin = "Admin",
+}
+
+/** Login response status */
+export enum RegisterStatus {
+  LoggedIn = "LoggedIn",
+  AdminConfirmationRequired = "AdminConfirmationRequired",
+  EmailConfirmationRequired = "EmailConfirmationRequired",
+}
 
 /** Request response */
 export interface RequestResponseOfRegisterStatus {
@@ -20,13 +155,6 @@ export interface RequestResponseOfRegisterStatus {
    * @format int32
    */
   status?: number;
-}
-
-/** Login response status */
-export enum RegisterStatus {
-  LoggedIn = "LoggedIn",
-  AdminConfirmationRequired = "AdminConfirmationRequired",
-  EmailConfirmationRequired = "EmailConfirmationRequired",
 }
 
 /** Request response */
@@ -196,7 +324,9 @@ export interface ProfileUserInfoModel {
    * User ID
    * @format guid
    */
-  userId?: string | null;
+  userId?: string;
+  /** User role */
+  role?: Role;
   /** Username */
   userName?: string | null;
   /** Email */
@@ -211,16 +341,6 @@ export interface ProfileUserInfoModel {
   stdNumber?: string | null;
   /** Avatar URL */
   avatar?: string | null;
-  /** User role */
-  role?: Role | null;
-}
-
-/** User role enumeration */
-export enum Role {
-  Banned = "Banned",
-  User = "User",
-  Monitor = "Monitor",
-  Admin = "Admin",
 }
 
 /** Global configuration update */
@@ -259,6 +379,8 @@ export interface GlobalConfig {
   footerInfo?: string | null;
   /** Custom theme color */
   customTheme?: string | null;
+  /** Use asymmetric encryption for API requests */
+  apiEncryption?: boolean;
   /** Platform logo hash */
   logoHash?: string | null;
   /** Platform favicon hash */
@@ -388,7 +510,7 @@ export interface UserCreateModel {
   phone?: string | null;
   /**
    * Team the user joins
-   * @maxLength 15
+   * @maxLength 20
    */
   teamName?: string | null;
 }
@@ -515,23 +637,18 @@ export interface LogMessageModel {
   /** Log message */
   msg?: string | null;
   /** Task status */
-  status?: string | null;
+  status?: TaskStatus | null;
 }
 
 /** Modify the participation information */
 export interface ParticipationEditModel {
   /** Participation Status */
   status?: ParticipationStatus | null;
-  /** The division of the participated team */
-  division?: string | null;
-}
-
-export enum ParticipationStatus {
-  Pending = "Pending",
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  Suspended = "Suspended",
-  Unsubmitted = "Unsubmitted",
+  /**
+   * The division of the participated team
+   * @format int32
+   */
+  divisionId?: number | null;
 }
 
 /** Game writeup information */
@@ -628,23 +745,6 @@ export interface ChallengeModel {
   category?: ChallengeCategory;
 }
 
-/** Challenge category */
-export enum ChallengeCategory {
-  Misc = "Misc",
-  Crypto = "Crypto",
-  Pwn = "Pwn",
-  Web = "Web",
-  Reverse = "Reverse",
-  Blockchain = "Blockchain",
-  Forensics = "Forensics",
-  Hardware = "Hardware",
-  Mobile = "Mobile",
-  PPC = "PPC",
-  AI = "AI",
-  Pentest = "Pentest",
-  OSINT = "OSINT",
-}
-
 /** List response */
 export interface ArrayResponseOfLocalFile {
   /** Data */
@@ -672,6 +772,66 @@ export interface LocalFile {
    * @minLength 1
    */
   name: string;
+}
+
+/** This record represents the response for an API token request. */
+export interface ApiTokenResponse {
+  token?: string;
+  /** Represents an API token for programmatic access. */
+  info?: ApiToken;
+}
+
+/** Represents an API token for programmatic access. */
+export interface ApiToken {
+  /**
+   * The unique identifier for the token, also used as the JWT ID (jti).
+   * @format guid
+   */
+  id?: string;
+  /**
+   * A user-friendly name for the token to identify its purpose.
+   * @minLength 1
+   * @maxLength 128
+   */
+  name: string;
+  /**
+   * The ID of the user who created the token.
+   * @format guid
+   * @minLength 1
+   */
+  creatorId: string;
+  /**
+   * The timestamp when the token was created.
+   * @format uint64
+   * @minLength 1
+   */
+  createdAt: number;
+  /**
+   * The timestamp when the token expires. A null value means it never expires.
+   * @format uint64
+   */
+  expiresAt?: number | null;
+  /**
+   * The timestamp when the token was last used.
+   * @format uint64
+   */
+  lastUsedAt?: number | null;
+  /** Indicates whether the token has been revoked. */
+  isRevoked: boolean;
+  /** The name of the user who created the token. */
+  creator?: string | null;
+}
+
+/** API token creation model. */
+export interface ApiTokenCreateModel {
+  /**
+   * The user-friendly name for the token to identify its purpose.
+   * @minLength 1
+   * @maxLength 128
+   */
+  name: string;
+  /** The duration for which the token will be valid, in days. */
+  expiresIn?: number | null;
 }
 
 export interface ProblemDetails {
@@ -743,7 +903,7 @@ export interface PostDetailModel {
 /** Game information (Edit) */
 export interface GameInfoModel {
   /**
-   * Game Id
+   * Game ID
    * @format int32
    */
   id?: number;
@@ -767,8 +927,6 @@ export interface GameInfoModel {
    * @maxLength 32
    */
   inviteCode?: string | null;
-  /** List of divisions the game belongs to */
-  divisions?: string[] | null;
   /**
    * Team member count limit, 0 means no limit
    * @format int32
@@ -850,16 +1008,6 @@ export interface FormattableDataOfNoticeType {
   values: string[];
 }
 
-/** Game announcement type */
-export enum NoticeType {
-  Normal = "Normal",
-  FirstBlood = "FirstBlood",
-  SecondBlood = "SecondBlood",
-  ThirdBlood = "ThirdBlood",
-  NewHint = "NewHint",
-  NewChallenge = "NewChallenge",
-}
-
 /** Game notice (Edit) */
 export interface GameNoticeModel {
   /**
@@ -869,10 +1017,82 @@ export interface GameNoticeModel {
   content: string;
 }
 
+export interface Division {
+  /** @format int32 */
+  id: number;
+  /**
+   * The name of the division.
+   * @minLength 1
+   * @maxLength 31
+   */
+  name: string;
+  /**
+   * Invitation code for joining the division.
+   * @maxLength 32
+   */
+  inviteCode?: string | null;
+  /** Permissions associated with the division. */
+  defaultPermissions?: GamePermission;
+  /** Challenge configs for this division. */
+  challengeConfigs?: DivisionChallengeConfig[];
+}
+
+export interface DivisionChallengeConfig {
+  /** @format int32 */
+  challengeId: number;
+  /** Challenge Specific Permissions */
+  permissions?: GamePermission;
+}
+
+export interface DivisionCreateModel {
+  /**
+   * The name of the division.
+   * @minLength 1
+   * @maxLength 31
+   */
+  name: string;
+  /**
+   * Invitation code for joining the division.
+   * @maxLength 32
+   */
+  inviteCode?: string | null;
+  /** Permissions associated with the division. */
+  defaultPermissions?: GamePermission | null;
+  /** Challenge configs for this division. */
+  challengeConfigs?: DivisionChallengeConfigModel[] | null;
+}
+
+export interface DivisionChallengeConfigModel {
+  /**
+   * Challenge ID
+   * @format int32
+   */
+  challengeId: number;
+  /** Challenge Specific Permissions */
+  permissions?: GamePermission;
+}
+
+export interface DivisionEditModel {
+  /**
+   * The name of the division.
+   * @maxLength 31
+   */
+  name?: string | null;
+  /**
+   * Invitation code for joining the division.
+   * @maxLength 32
+   */
+  inviteCode?: string | null;
+  /** Permissions associated with the division. */
+  defaultPermissions?: GamePermission | null;
+  /** Challenge configs for this division. */
+  challengeConfigs?: DivisionChallengeConfigModel[] | null;
+}
+
 /** Challenge detailed information (Edit) */
 export interface ChallengeEditDetailModel {
   /**
-   * Challenge Id
+   * Challenge ID
    * @format int32
    */
   id?: number;
@@ -939,6 +1159,16 @@ export interface ChallengeEditDetailModel {
   /** Whether to disable blood bonus */
   disableBloodBonus?: boolean | null;
   /**
+   * The deadline of the challenge, null means no deadline
+   * @format uint64
+   */
+  deadlineUtc?: number | null;
+  /**
+   * Maximum number of submissions allowed per team (0 = no limit)
+   * @format int32
+   */
+  submissionLimit: number;
+  /**
    * Initial score
    * @format int32
    */
@@ -957,13 +1187,6 @@ export interface ChallengeEditDetailModel {
   difficulty: number;
 }
 
-export enum ChallengeType {
-  StaticAttachment = "StaticAttachment",
-  StaticContainer = "StaticContainer",
-  DynamicAttachment = "DynamicAttachment",
-  DynamicContainer = "DynamicContainer",
-}
-
 export interface Attachment {
   /** @format int32 */
   id: number;
@@ -976,12 +1199,6 @@ export interface Attachment {
    * @format int64
    */
   fileSize?: number | null;
-}
-
-export enum FileType {
-  None = "None",
-  Local = "Local",
-  Remote = "Remote",
 }
 
 export interface ContainerInfoModel {
@@ -999,13 +1216,6 @@ export interface ContainerInfoModel {
   expectStopAt?: number;
   /** Challenge entry point */
   entry?: string;
-}
-
-/** Container status */
-export enum ContainerStatus {
-  Pending = "Pending",
-  Running = "Running",
-  Destroyed = "Destroyed",
 }
 
 /** Flag information (Edit) */
@@ -1054,6 +1264,11 @@ export interface ChallengeInfoModel {
    * @format int32
    */
   originalScore?: number;
+  /**
+   * The deadline of the challenge, null means no deadline
+   * @format uint64
+   */
+  deadlineUtc?: number | null;
 }
 
 /** Challenge update information (Edit) */
@@ -1078,6 +1293,18 @@ export interface ChallengeUpdateModel {
   isEnabled?: boolean | null;
   /** Unified file name */
   fileName?: string | null;
+  /**
+   * The deadline of the challenge, null means no deadline
+   * @format uint64
+   */
+  deadlineUtc?: number | null;
+  /**
+   * Maximum number of flag submissions allowed per team for this challenge (0 = no limit)
+   * @format int32
+   * @min 0
+   * @max 10000
+   */
+  submissionLimit?: number | null;
   /** Container image name and tag */
   containerImage?: string | null;
   /**
@@ -1155,24 +1382,13 @@ export interface FlagCreateModel {
   remoteUrl?: string | null;
 }
 
-/** Task execution status */
-export enum TaskStatus {
-  Success = "Success",
-  Failed = "Failed",
-  Duplicate = "Duplicate",
-  Denied = "Denied",
-  NotFound = "NotFound",
-  Exit = "Exit",
-  Pending = "Pending",
-}
-
 /** Basic game information, excluding detailed description and current team registration status */
 export interface BasicGameInfoModel {
   /** @format int32 */
-  id?: number;
+  id: number;
   /** Game title */
   title?: string;
-  /** Game description */
+  /** Game summary */
   summary?: string;
   /** Poster image URL */
   poster?: string | null;
@@ -1184,13 +1400,31 @@ export interface BasicGameInfoModel {
   /**
    * Start time
    * @format uint64
+   * @minLength 1
    */
-  start?: number;
+  start: number;
   /**
    * End time
    * @format uint64
+   * @minLength 1
    */
-  end?: number;
+  end: number;
+}
+
+/** List response */
+export interface ArrayResponseOfBasicGameInfoModel {
+  /** Data */
+  data: BasicGameInfoModel[];
+  /**
+   * Data length
+   * @format int32
+   */
+  length: number;
+  /**
+   * Total length
+   * @format int32
+   */
+  total?: number;
 }
 
 /** Detailed game information, including detailed introduction and current team registration status */
@@ -1206,7 +1440,7 @@ export interface DetailedGameInfoModel {
   /** Whether the game is hidden */
   hidden?: boolean;
   /** List of participation divisions */
-  divisions?: string[] | null;
+  divisions?: DivisionInfo[] | null;
   /** Whether an invitation code is required */
   inviteCodeRequired?: boolean;
   /** Whether writeup submission is required */
@@ -1223,8 +1457,11 @@ export interface DetailedGameInfoModel {
    * @format int32
    */
   teamCount?: number;
-  /** Current registered division */
-  division?: string | null;
+  /**
+   * Current registered division
+   * @format int32
+   */
+  division?: number | null;
   /** Team name for participation */
   teamName?: string | null;
   /** Whether the game is in practice mode (can still be accessed after the game ends) */
@@ -1243,14 +1480,49 @@ export interface DetailedGameInfoModel {
   end?: number;
 }
 
+export interface DivisionInfo {
+  /**
+   * Division ID
+   * @format int32
+   */
+  id?: number;
+  /** Division name */
+  name?: string;
+  /** Is the division invite code required */
+  inviteCodeRequired?: boolean;
+}
+
+export interface GameJoinCheckInfoModel {
+  /** The teams that the current user has joined and participated in the game */
+  joinedTeams?: JoinedTeam[];
+  /** IDs of divisions that can be joined */
+  joinableDivisions?: number[];
+}
+
+export interface JoinedTeam {
+  /**
+   * Team ID
+   * @format int32
+   */
+  id: number;
+  /**
+   * The division ID the team has joined
+   * @format int32
+   */
+  division: number;
+}
+
 export interface GameJoinModel {
   /**
    * Team ID for participation
    * @format int32
    */
-  teamId?: number;
-  /** Division for participation */
-  division?: string | null;
+  teamId: number;
+  /**
+   * Division for participation
+   * @format int32
+   */
+  divisionId?: number | null;
   /** Invitation code for participation */
   inviteCode?: string | null;
 }
@@ -1268,17 +1540,25 @@ export interface ScoreboardModel {
    * @format int64
    */
   bloodBonus: number;
-  /** Timeline of the top ten */
-  timeLines?: Record<string, TopTimeLine[]>;
+  /** List of top ten timelines */
+  timelines: TimeLineItem[];
   /** List of team information */
-  items?: ScoreboardItem[];
+  items: ScoreboardItem[];
+  /** List of division information */
+  divisions: DivisionItem[];
   /** Challenge information */
-  challenges?: Record<string, ChallengeInfo[]>;
+  challenges: Record<string, ChallengeInfo[]>;
   /**
    * Number of challenges
    * @format int32
    */
-  challengeCount?: number;
+  challengeCount: number;
+}
+
+export interface TimeLineItem {
+  /** @format int32 */
+  divisionId?: number;
+  teams?: TopTimeLine[];
 }
 
 export interface TopTimeLine {
@@ -1286,24 +1566,28 @@ export interface TopTimeLine {
    * Team ID
    * @format int32
    */
-  id?: number;
-  /** Team name */
-  name?: string;
+  id: number;
+  /**
+   * Team name
+   * @minLength 1
+   */
+  name: string;
   /** Timeline */
-  items?: TimeLine[];
+  items: TimeLine[];
 }
 
 export interface TimeLine {
   /**
    * Time
    * @format uint64
+   * @minLength 1
    */
-  time?: number;
+  time: number;
   /**
    * Score
    * @format int32
    */
-  score?: number;
+  score: number;
 }
 
 export interface ScoreboardItem {
@@ -1311,25 +1595,31 @@ export interface ScoreboardItem {
    * Team ID
    * @format int32
    */
-  id?: number;
-  /** Team name */
-  name?: string;
+  id: number;
+  /**
+   * Team name
+   * @minLength 1
+   */
+  name: string;
   /** Team Bio */
   bio?: string | null;
-  /** Division of participation */
-  division?: string | null;
+  /**
+   * Division of participation
+   * @format int32
+   */
+  divisionId?: number | null;
   /** Team avatar */
   avatar?: string | null;
   /**
    * Score
    * @format int32
    */
-  score?: number;
+  score: number;
   /**
    * Rank
    * @format int32
    */
-  rank?: number;
+  rank: number;
   /**
    * Division rank
    * @format int32
@@ -1338,15 +1628,16 @@ export interface ScoreboardItem {
   /**
    * Last submission time
    * @format uint64
+   * @minLength 1
    */
-  lastSubmissionTime?: number;
+  lastSubmissionTime: number;
   /** List of solved challenges */
-  solvedChallenges?: ChallengeItem[];
+  solvedChallenges: ChallengeItem[];
   /**
    * Number of solved challenges
    * @format int32
    */
-  solvedCount?: number;
+  solvedCount: number;
 }
 
 export interface ChallengeItem {
@@ -1354,30 +1645,49 @@ export interface ChallengeItem {
    * Challenge ID
    * @format int32
    */
-  id?: number;
+  id: number;
   /**
    * Challenge score
    * @format int32
    */
-  score?: number;
+  score: number;
   /** Submission type (unsolved, first blood, second blood, third blood, or others) */
-  type?: SubmissionType;
+  type: SubmissionType;
   /** Username of the solver */
   userName?: string | null;
   /**
    * Submission time for the challenge, used to calculate the timeline
    * @format uint64
+   * @minLength 1
    */
-  time?: number;
+  time: number;
 }
 
-/** Submission type */
-export enum SubmissionType {
-  Unaccepted = "Unaccepted",
-  FirstBlood = "FirstBlood",
-  SecondBlood = "SecondBlood",
-  ThirdBlood = "ThirdBlood",
-  Normal = "Normal",
+export interface DivisionItem {
+  /**
+   * Division ID
+   * @format int32
+   */
+  id: number;
+  /**
+   * The name of the division.
+   * @minLength 1
+   */
+  name: string;
+  /** Permissions associated with the division. */
+  defaultPermissions: GamePermission;
+  /** Challenge configs for this division. */
+  challengeConfigs: Record<string, DivisionChallengeItem>;
+}
+
+export interface DivisionChallengeItem {
+  /**
+   * Challenge ID
+   * @format int32
+   */
+  challengeId: number;
+  /** Permissions for a specific challenge. */
+  permissions: GamePermission;
 }
 
 export interface ChallengeInfo {
@@ -1385,25 +1695,33 @@ export interface ChallengeInfo {
    * Challenge ID
    * @format int32
    */
-  id?: number;
-  /** Challenge title */
-  title?: string;
+  id: number;
+  /**
+   * Challenge title
+   * @minLength 1
+   */
+  title: string;
   /** Challenge category */
-  category?: ChallengeCategory;
+  category: ChallengeCategory;
   /**
    * Challenge score
    * @format int32
    */
-  score?: number;
+  score: number;
   /**
    * Number of teams that solved the challenge
    * @format int32
    */
-  solved?: number;
+  solved: number;
+  /**
+   * The deadline of the challenge, null means no deadline
+   * @format uint64
+   */
+  deadline?: number | null;
   /** Bloods for the challenge */
-  bloods?: Blood[];
+  bloods: Blood[];
   /** Whether to disable blood bonus */
-  disableBloodBonus?: boolean;
+  disableBloodBonus: boolean;
 }
 
 export interface Blood {
@@ -1411,9 +1729,12 @@ export interface Blood {
    * Team ID
    * @format int32
    */
-  id?: number;
-  /** Team name */
-  name?: string;
+  id: number;
+  /**
+   * Team name
+   * @minLength 1
+   */
+  name: string;
   /** Team avatar */
   avatar?: string | null;
   /**
@@ -1448,15 +1769,6 @@ export interface FormattableDataOfEventType {
   values: string[];
 }
 
-/** Game event type */
-export enum EventType {
-  Normal = "Normal",
-  ContainerStart = "ContainerStart",
-  ContainerDestroy = "ContainerDestroy",
-  FlagSubmit = "FlagSubmit",
-  CheatDetected = "CheatDetected",
-}
-
 export interface Submission {
   /**
    * Submitted answer string
@@ -1476,15 +1788,6 @@ export interface Submission {
   team?: string;
   /** Challenge that was submitted */
   challenge?: string;
-}
-
-/** Judgement result */
-export enum AnswerResult {
-  FlagSubmitted = "FlagSubmitted",
-  Accepted = "Accepted",
-  WrongAnswer = "WrongAnswer",
-  CheatDetected = "CheatDetected",
-  NotFound = "NotFound",
 }
 
 /** Cheat behavior information */
@@ -1510,6 +1813,11 @@ export interface ParticipationModel {
   status?: ParticipationStatus;
   /** Team division */
   division?: string | null;
+  /**
+   * Team division ID
+   * @format int32
+   */
+  divisionId?: number | null;
 }
 
 export interface ChallengeTrafficModel {
@@ -1608,15 +1916,18 @@ export interface ParticipationInfoModel {
    * Participation ID
    * @format int32
    */
-  id?: number;
+  id: number;
   /** Participating team */
-  team?: TeamWithDetailedUserInfo;
+  team: TeamWithDetailedUserInfo;
   /** Registered members */
-  registeredMembers?: string[];
-  /** Division of the game */
-  division?: string | null;
+  registeredMembers: string[];
+  /**
+   * Division of the game
+   * @format int32
+   */
+  divisionId?: number | null;
   /** Participation status */
-  status?: ParticipationStatus;
+  status: ParticipationStatus;
 }
 
 /** Detailed team information for review (Admin) */
@@ -1626,21 +1937,21 @@ export interface TeamWithDetailedUserInfo {
    * @format int32
    */
   id?: number;
+  /** Is locked */
+  locked?: boolean;
+  /**
+   * Captain ID
+   * @format guid
+   */
+  captainId?: string;
   /** Team name */
   name?: string | null;
   /** Team bio */
   bio?: string | null;
   /** Avatar URL */
   avatar?: string | null;
-  /** Is locked */
-  locked?: boolean;
-  /**
-   * Captain Id
-   * @format guid
-   */
-  captainId?: string;
   /** Team members */
-  members?: ProfileUserInfoModel[] | null;
+  members?: ProfileUserInfoModel[];
 }
 
 /** Challenge detailed information */
@@ -1667,6 +1978,21 @@ export interface ChallengeDetailModel {
   type?: ChallengeType;
   /** Flag context */
   context?: ClientFlagContext;
+  /**
+   * Maximum number of attempts allowed (0 = no limit)
+   * @format int32
+   */
+  limit?: number;
+  /**
+   * Current attempt count
+   * @format int32
+   */
+  attempts?: number;
+  /**
+   * Deadline of the challenge, null means no deadline
+   * @format uint64
+   */
+  deadline?: number | null;
 }
 
 export interface ClientFlagContext {
@@ -1690,9 +2016,7 @@ export interface ClientFlagContext {
 export interface FlagSubmitModel {
   /**
    * Flag content
-   * Fix: Prevent accidental submissions from the frontend (number/float/null) that may be incorrectly converted
    * @minLength 1
-   * @maxLength 127
    */
   flag: string;
 }
@@ -1755,6 +2079,8 @@ export interface ClientConfig {
   footerInfo?: string | null;
   /** Custom theme color */
   customTheme?: string | null;
+  /** The public key used for API requests */
+  apiPublicKey?: string | null;
   /** Platform logo URL */
   logoUrl?: string | null;
   /** Container port mapping type */
@@ -1776,24 +2102,12 @@ export interface ClientConfig {
   renewalWindow?: number;
 }
 
-export enum ContainerPortMappingType {
-  Default = "Default",
-  PlatformProxy = "PlatformProxy",
-}
-
 /** Client CAPTCHA information */
 export interface ClientCaptchaInfoModel {
   /** Captcha Provider Type */
   type?: CaptchaProvider;
   /** Site Key */
   siteKey?: string;
-}
-
-export enum CaptchaProvider {
-  None = "None",
-  HashPow = "HashPow",
-  GoogleRecaptcha = "GoogleRecaptcha",
-  CloudflareTurnstile = "CloudflareTurnstile",
 }
 
 /** Hash Pow verification */
@@ -1847,12 +2161,19 @@ export interface SignatureVerifyModel {
 }
 
 import { apiLanguage } from "@Utils/I18n";
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, HeadersDefaults, ResponseType } from "axios";
+import type {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  HeadersDefaults,
+  ResponseType,
+} from "axios";
 import axios from "axios";
 
 export type QueryParamsType = Record<string | number, any>;
 
-export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
+export interface FullRequestParams
+  extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
   /** set parameter to `true` for call `securityWorker` for this request */
   secure?: boolean;
   /** request path */
@@ -1867,9 +2188,13 @@ export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "pa
   body?: unknown;
 }
 
-export type RequestParams = Omit<FullRequestParams, "body" | "method" | "query" | "path">;
+export type RequestParams = Omit<
+  FullRequestParams,
+  "body" | "method" | "query" | "path"
+>;
 
-export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
+export interface ApiConfig<SecurityDataType = unknown>
+  extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
   securityWorker?: (
     securityData: SecurityDataType | null,
   ) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
@@ -1891,8 +2216,16 @@ export class HttpClient<SecurityDataType = unknown> {
   private secure?: boolean;
   private format?: ResponseType;
 
-  constructor({ securityWorker, secure, format, ...axiosConfig }: ApiConfig<SecurityDataType> = {}) {
-    this.instance = axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || "" });
+  constructor({
+    securityWorker,
+    secure,
+    format,
+    ...axiosConfig
+  }: ApiConfig<SecurityDataType> = {}) {
+    this.instance = axios.create({
+      ...axiosConfig,
+      baseURL: axiosConfig.baseURL || "",
+    });
     this.secure = secure;
     this.format = format;
     this.securityWorker = securityWorker;
@@ -1902,17 +2235,23 @@ export class HttpClient<SecurityDataType = unknown> {
     this.securityData = data;
   };
 
-  protected mergeRequestParams(params1: AxiosRequestConfig, params2?: AxiosRequestConfig): AxiosRequestConfig {
+  protected mergeRequestParams(
+    params1: AxiosRequestConfig,
+    params2?: AxiosRequestConfig,
+  ): AxiosRequestConfig {
     const method = params1.method || (params2 && params2.method);
 
     return {
       ...this.instance.defaults,
       ...params1,
-      ...(params2 || {}),
+      ...params2,
       headers: {
-        ...((method && this.instance.defaults.headers[method.toLowerCase() as keyof HeadersDefaults]) || {}),
-        ...(params1.headers || {}),
-        ...((params2 && params2.headers) || {}),
+        ...(method &&
+          this.instance.defaults.headers[
+            method.toLowerCase() as keyof HeadersDefaults
+          ]),
+        ...params1.headers,
+        ...(params2 && params2.headers),
       },
     };
   }
@@ -1928,11 +2267,15 @@ export class HttpClient<SecurityDataType = unknown> {
   protected createFormData(input: Record<string, unknown>): FormData {
     return Object.keys(input || {}).reduce((formData, key) => {
       const property = input[key];
-      const propertyContent: any[] = property instanceof Array ? property : [property];
+      const propertyContent: any[] =
+        property instanceof Array ? property : [property];
 
       for (const formItem of propertyContent) {
         const isFileType = formItem instanceof Blob || formItem instanceof File;
-        formData.append(key, isFileType ? formItem : this.stringifyFormItem(formItem));
+        formData.append(
+          key,
+          isFileType ? formItem : this.stringifyFormItem(formItem),
+        );
       }
 
       return formData;
@@ -1956,20 +2299,32 @@ export class HttpClient<SecurityDataType = unknown> {
     const requestParams = this.mergeRequestParams(params, secureParams);
     const responseFormat = format || this.format || undefined;
 
-    if (type === ContentType.FormData && body && body !== null && typeof body === "object") {
+    if (
+      type === ContentType.FormData &&
+      body &&
+      body !== null &&
+      typeof body === "object"
+    ) {
       body = this.createFormData(body as Record<string, unknown>);
     }
 
-    if (type === ContentType.Text && body && body !== null && typeof body !== "string") {
+    if (
+      type === ContentType.Text &&
+      body &&
+      body !== null &&
+      typeof body !== "string"
+    ) {
       body = JSON.stringify(body);
     }
 
     return this.instance.request({
       ...requestParams,
       headers: {
-        ...(requestParams.headers || {}),
-        ...(type && type !== ContentType.FormData ? { "Content-Type": type } : {}),
-        ...{ "Accept-Language": apiLanguage },
+        ...requestParams.headers,
+        ...(type && type !== ContentType.FormData
+          ? { "Content-Type": type }
+          : {}),
+        "Accept-Language": apiLanguage,
       },
       params: query,
       responseType: responseFormat,
@@ -1979,7 +2334,6 @@ export class HttpClient<SecurityDataType = unknown> {
   };
 }
 
-import { handleAxiosError } from "@Utils/ApiHelper";
 import useSWR, { MutatorOptions, SWRConfiguration, mutate } from "swr";
 
 /**
@@ -1988,7 +2342,9 @@ import useSWR, { MutatorOptions, SWRConfiguration, mutate } from "swr";
  *
  * GZCTF Server API Document
  */
-export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
+export class Api<
+  SecurityDataType extends unknown,
+> extends HttpClient<SecurityDataType> {
   account = {
     /**
      * @description Use this API to update user's avatar. User permissions required.
@@ -2040,7 +2396,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary User password change
      * @request PUT:/api/account/changepassword
      */
-    accountChangePassword: (data: PasswordChangeModel, params: RequestParams = {}) =>
+    accountChangePassword: (
+      data: PasswordChangeModel,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/account/changepassword`,
         method: "PUT",
@@ -2089,7 +2448,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary User email change confirmation
      * @request POST:/api/account/mailchangeconfirm
      */
-    accountMailChangeConfirm: (data: AccountVerifyModel, params: RequestParams = {}) =>
+    accountMailChangeConfirm: (
+      data: AccountVerifyModel,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/account/mailchangeconfirm`,
         method: "POST",
@@ -2106,7 +2468,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary User password reset
      * @request POST:/api/account/passwordreset
      */
-    accountPasswordReset: (data: PasswordResetModel, params: RequestParams = {}) =>
+    accountPasswordReset: (
+      data: PasswordResetModel,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/account/passwordreset`,
         method: "POST",
@@ -2139,7 +2504,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request GET:/api/account/profile
      */
     useAccountProfile: (options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<ProfileUserInfoModel, RequestResponse>(doFetch ? `/api/account/profile` : null, options),
+      useSWR<ProfileUserInfoModel, RequestResponse>(
+        doFetch ? `/api/account/profile` : null,
+        options,
+      ),
 
     /**
      * @description Use this API to get user information. User permissions required.
@@ -2149,8 +2517,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get user information
      * @request GET:/api/account/profile
      */
-    mutateAccountProfile: (data?: ProfileUserInfoModel | Promise<ProfileUserInfoModel>, options?: MutatorOptions) =>
-      mutate<ProfileUserInfoModel>(`/api/account/profile`, data, options),
+    mutateAccountProfile: (
+      data?: ProfileUserInfoModel | Promise<ProfileUserInfoModel>,
+      options?: MutatorOptions,
+    ) => mutate<ProfileUserInfoModel>(`/api/account/profile`, data, options),
 
     /**
      * @description Use this API to request password recovery. Sends an email to the user. Email URL: /reset
@@ -2314,6 +2684,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /**
          * @format int32
+         * @min 0
+         * @max 500
          * @default 50
          */
         count?: number;
@@ -2344,6 +2716,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /**
          * @format int32
+         * @min 0
+         * @max 500
          * @default 50
          */
         count?: number;
@@ -2355,7 +2729,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       options?: SWRConfiguration,
       doFetch: boolean = true,
-    ) => useSWR<ArrayResponseOfLocalFile, RequestResponse>(doFetch ? [`/api/admin/files`, query] : null, options),
+    ) =>
+      useSWR<ArrayResponseOfLocalFile, RequestResponse>(
+        doFetch ? [`/api/admin/files`, query] : null,
+        options,
+      ),
 
     /**
      * @description Use this API to get all files, requires Admin permission
@@ -2369,6 +2747,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /**
          * @format int32
+         * @min 0
+         * @max 500
          * @default 50
          */
         count?: number;
@@ -2380,7 +2760,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       data?: ArrayResponseOfLocalFile | Promise<ArrayResponseOfLocalFile>,
       options?: MutatorOptions,
-    ) => mutate<ArrayResponseOfLocalFile>([`/api/admin/files`, query], data, options),
+    ) =>
+      mutate<ArrayResponseOfLocalFile>(
+        [`/api/admin/files`, query],
+        data,
+        options,
+      ),
 
     /**
      * @description Use this API to get global settings, requires Admin permission
@@ -2406,7 +2791,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request GET:/api/admin/config
      */
     useAdminGetConfigs: (options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<ConfigEditModel, RequestResponse>(doFetch ? `/api/admin/config` : null, options),
+      useSWR<ConfigEditModel, RequestResponse>(
+        doFetch ? `/api/admin/config` : null,
+        options,
+      ),
 
     /**
      * @description Use this API to get global settings, requires Admin permission
@@ -2416,8 +2804,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get configuration
      * @request GET:/api/admin/config
      */
-    mutateAdminGetConfigs: (data?: ConfigEditModel | Promise<ConfigEditModel>, options?: MutatorOptions) =>
-      mutate<ConfigEditModel>(`/api/admin/config`, data, options),
+    mutateAdminGetConfigs: (
+      data?: ConfigEditModel | Promise<ConfigEditModel>,
+      options?: MutatorOptions,
+    ) => mutate<ConfigEditModel>(`/api/admin/config`, data, options),
 
     /**
      * @description Use this API to get all container instances, requires Admin permission
@@ -2443,7 +2833,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request GET:/api/admin/instances
      */
     useAdminInstances: (options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<ArrayResponseOfContainerInstanceModel, RequestResponse>(doFetch ? `/api/admin/instances` : null, options),
+      useSWR<ArrayResponseOfContainerInstanceModel, RequestResponse>(
+        doFetch ? `/api/admin/instances` : null,
+        options,
+      ),
 
     /**
      * @description Use this API to get all container instances, requires Admin permission
@@ -2454,9 +2847,16 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request GET:/api/admin/instances
      */
     mutateAdminInstances: (
-      data?: ArrayResponseOfContainerInstanceModel | Promise<ArrayResponseOfContainerInstanceModel>,
+      data?:
+        | ArrayResponseOfContainerInstanceModel
+        | Promise<ArrayResponseOfContainerInstanceModel>,
       options?: MutatorOptions,
-    ) => mutate<ArrayResponseOfContainerInstanceModel>(`/api/admin/instances`, data, options),
+    ) =>
+      mutate<ArrayResponseOfContainerInstanceModel>(
+        `/api/admin/instances`,
+        data,
+        options,
+      ),
 
     /**
      * @description Use this API to get all logs, requires Admin permission
@@ -2472,6 +2872,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         level?: string | null;
         /**
          * @format int32
+         * @min 0
+         * @max 1000
          * @default 50
          */
         count?: number;
@@ -2504,6 +2906,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         level?: string | null;
         /**
          * @format int32
+         * @min 0
+         * @max 1000
          * @default 50
          */
         count?: number;
@@ -2515,7 +2919,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       options?: SWRConfiguration,
       doFetch: boolean = true,
-    ) => useSWR<LogMessageModel[], RequestResponse>(doFetch ? [`/api/admin/logs`, query] : null, options),
+    ) =>
+      useSWR<LogMessageModel[], RequestResponse>(
+        doFetch ? [`/api/admin/logs`, query] : null,
+        options,
+      ),
 
     /**
      * @description Use this API to get all logs, requires Admin permission
@@ -2531,6 +2939,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         level?: string | null;
         /**
          * @format int32
+         * @min 0
+         * @max 1000
          * @default 50
          */
         count?: number;
@@ -2552,7 +2962,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Update participation status
      * @request PUT:/api/admin/participation/{id}
      */
-    adminParticipation: (id: number, data: ParticipationEditModel, params: RequestParams = {}) =>
+    adminParticipation: (
+      id: number,
+      data: ParticipationEditModel,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/admin/participation/${id}`,
         method: "PUT",
@@ -2648,6 +3062,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /**
          * @format int32
+         * @min 0
+         * @max 500
          * @default 100
          */
         count?: number;
@@ -2678,6 +3094,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /**
          * @format int32
+         * @min 0
+         * @max 500
          * @default 100
          */
         count?: number;
@@ -2689,7 +3107,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       options?: SWRConfiguration,
       doFetch: boolean = true,
-    ) => useSWR<ArrayResponseOfTeamInfoModel, RequestResponse>(doFetch ? [`/api/admin/teams`, query] : null, options),
+    ) =>
+      useSWR<ArrayResponseOfTeamInfoModel, RequestResponse>(
+        doFetch ? [`/api/admin/teams`, query] : null,
+        options,
+      ),
 
     /**
      * @description Use this API to get all teams, requires Admin permission
@@ -2703,6 +3125,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /**
          * @format int32
+         * @min 0
+         * @max 500
          * @default 100
          */
         count?: number;
@@ -2712,9 +3136,16 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
          */
         skip?: number;
       },
-      data?: ArrayResponseOfTeamInfoModel | Promise<ArrayResponseOfTeamInfoModel>,
+      data?:
+        | ArrayResponseOfTeamInfoModel
+        | Promise<ArrayResponseOfTeamInfoModel>,
       options?: MutatorOptions,
-    ) => mutate<ArrayResponseOfTeamInfoModel>([`/api/admin/teams`, query], data, options),
+    ) =>
+      mutate<ArrayResponseOfTeamInfoModel>(
+        [`/api/admin/teams`, query],
+        data,
+        options,
+      ),
 
     /**
      * @description Use this API to change global settings, requires Admin permission
@@ -2764,7 +3195,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Modify team information
      * @request PUT:/api/admin/teams/{id}
      */
-    adminUpdateTeam: (id: number, data: AdminTeamModel, params: RequestParams = {}) =>
+    adminUpdateTeam: (
+      id: number,
+      data: AdminTeamModel,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/admin/teams/${id}`,
         method: "PUT",
@@ -2781,7 +3216,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Modify user information
      * @request PUT:/api/admin/users/{userid}
      */
-    adminUpdateUserInfo: (userid: string, data: AdminUserInfoModel, params: RequestParams = {}) =>
+    adminUpdateUserInfo: (
+      userid: string,
+      data: AdminUserInfoModel,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/admin/users/${userid}`,
         method: "PUT",
@@ -2813,8 +3252,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get user information
      * @request GET:/api/admin/users/{userid}
      */
-    useAdminUserInfo: (userid: string, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<ProfileUserInfoModel, RequestResponse>(doFetch ? `/api/admin/users/${userid}` : null, options),
+    useAdminUserInfo: (
+      userid: string,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<ProfileUserInfoModel, RequestResponse>(
+        doFetch ? `/api/admin/users/${userid}` : null,
+        options,
+      ),
 
     /**
      * @description Use this API to get user information, requires Admin permission
@@ -2828,7 +3274,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       userid: string,
       data?: ProfileUserInfoModel | Promise<ProfileUserInfoModel>,
       options?: MutatorOptions,
-    ) => mutate<ProfileUserInfoModel>(`/api/admin/users/${userid}`, data, options),
+    ) =>
+      mutate<ProfileUserInfoModel>(`/api/admin/users/${userid}`, data, options),
 
     /**
      * @description Use this API to get all users, requires Admin permission
@@ -2842,6 +3289,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /**
          * @format int32
+         * @min 0
+         * @max 500
          * @default 100
          */
         count?: number;
@@ -2872,6 +3321,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /**
          * @format int32
+         * @min 0
+         * @max 500
          * @default 100
          */
         count?: number;
@@ -2883,7 +3334,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       options?: SWRConfiguration,
       doFetch: boolean = true,
-    ) => useSWR<ArrayResponseOfUserInfoModel, RequestResponse>(doFetch ? [`/api/admin/users`, query] : null, options),
+    ) =>
+      useSWR<ArrayResponseOfUserInfoModel, RequestResponse>(
+        doFetch ? [`/api/admin/users`, query] : null,
+        options,
+      ),
 
     /**
      * @description Use this API to get all users, requires Admin permission
@@ -2897,6 +3352,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /**
          * @format int32
+         * @min 0
+         * @max 500
          * @default 100
          */
         count?: number;
@@ -2906,9 +3363,16 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
          */
         skip?: number;
       },
-      data?: ArrayResponseOfUserInfoModel | Promise<ArrayResponseOfUserInfoModel>,
+      data?:
+        | ArrayResponseOfUserInfoModel
+        | Promise<ArrayResponseOfUserInfoModel>,
       options?: MutatorOptions,
-    ) => mutate<ArrayResponseOfUserInfoModel>([`/api/admin/users`, query], data, options),
+    ) =>
+      mutate<ArrayResponseOfUserInfoModel>(
+        [`/api/admin/users`, query],
+        data,
+        options,
+      ),
 
     /**
      * @description Use this API to get Writeup basic information, requires Admin permission
@@ -2933,8 +3397,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get all Writeup basic information
      * @request GET:/api/admin/writeups/{id}
      */
-    useAdminWriteups: (id: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<WriteupInfoModel[], RequestResponse>(doFetch ? `/api/admin/writeups/${id}` : null, options),
+    useAdminWriteups: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<WriteupInfoModel[], RequestResponse>(
+        doFetch ? `/api/admin/writeups/${id}` : null,
+        options,
+      ),
 
     /**
      * @description Use this API to get Writeup basic information, requires Admin permission
@@ -2949,6 +3420,114 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       data?: WriteupInfoModel[] | Promise<WriteupInfoModel[]>,
       options?: MutatorOptions,
     ) => mutate<WriteupInfoModel[]>(`/api/admin/writeups/${id}`, data, options),
+  };
+  apiToken = {
+    /**
+     * No description
+     *
+     * @tags ApiToken
+     * @name ApiTokenGenerateToken
+     * @summary Generates a new API token.
+     * @request POST:/api/tokens
+     */
+    apiTokenGenerateToken: (
+      data: ApiTokenCreateModel,
+      params: RequestParams = {},
+    ) =>
+      this.request<ApiTokenResponse, RequestResponse>({
+        path: `/api/tokens`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ApiToken
+     * @name ApiTokenListTokens
+     * @summary Lists all API tokens.
+     * @request GET:/api/tokens
+     */
+    apiTokenListTokens: (params: RequestParams = {}) =>
+      this.request<ApiToken[], RequestResponse>({
+        path: `/api/tokens`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+    /**
+     * No description
+     *
+     * @tags ApiToken
+     * @name ApiTokenListTokens
+     * @summary Lists all API tokens.
+     * @request GET:/api/tokens
+     */
+    useApiTokenListTokens: (
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<ApiToken[], RequestResponse>(
+        doFetch ? `/api/tokens` : null,
+        options,
+      ),
+
+    /**
+     * No description
+     *
+     * @tags ApiToken
+     * @name ApiTokenListTokens
+     * @summary Lists all API tokens.
+     * @request GET:/api/tokens
+     */
+    mutateApiTokenListTokens: (
+      data?: ApiToken[] | Promise<ApiToken[]>,
+      options?: MutatorOptions,
+    ) => mutate<ApiToken[]>(`/api/tokens`, data, options),
+
+    /**
+     * No description
+     *
+     * @tags ApiToken
+     * @name ApiTokenRestoreToken
+     * @summary Restores an API token.
+     * @request POST:/api/tokens/{id}/restore
+     */
+    apiTokenRestoreToken: (id: string, params: RequestParams = {}) =>
+      this.request<void, RequestResponse | ProblemDetails>({
+        path: `/api/tokens/${id}/restore`,
+        method: "POST",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ApiToken
+     * @name ApiTokenRevokeToken
+     * @summary Revokes an API token.
+     * @request DELETE:/api/tokens/{id}
+     */
+    apiTokenRevokeToken: (
+      id: string,
+      query?: {
+        /**
+         * If true, the token will be deleted instead of just revoked.
+         * @default false
+         */
+        delete?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, RequestResponse | ProblemDetails>({
+        path: `/api/tokens/${id}`,
+        method: "DELETE",
+        query: query,
+        ...params,
+      }),
   };
   assets = {
     /**
@@ -2974,7 +3553,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary File retrieval interface
      * @request GET:/assets/{hash}/{filename}
      */
-    assetsGetFile: (hash: string, filename: string, params: RequestParams = {}) =>
+    assetsGetFile: (
+      hash: string,
+      filename: string,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/assets/${hash}/${filename}`,
         method: "GET",
@@ -3018,7 +3601,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Add Game Challenge Flag
      * @request POST:/api/edit/games/{id}/challenges/{cId}/flags
      */
-    editAddFlags: (id: number, cId: number, data: FlagCreateModel[], params: RequestParams = {}) =>
+    editAddFlags: (
+      id: number,
+      cId: number,
+      data: FlagCreateModel[],
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/edit/games/${id}/challenges/${cId}/flags`,
         method: "POST",
@@ -3053,7 +3641,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Add Game Challenge
      * @request POST:/api/edit/games/{id}/challenges
      */
-    editAddGameChallenge: (id: number, data: ChallengeInfoModel, params: RequestParams = {}) =>
+    editAddGameChallenge: (
+      id: number,
+      data: ChallengeInfoModel,
+      params: RequestParams = {},
+    ) =>
       this.request<ChallengeEditDetailModel, RequestResponse>({
         path: `/api/edit/games/${id}/challenges`,
         method: "POST",
@@ -3071,7 +3663,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Add Game Notice
      * @request POST:/api/edit/games/{id}/notices
      */
-    editAddGameNotice: (id: number, data: GameNoticeModel, params: RequestParams = {}) =>
+    editAddGameNotice: (
+      id: number,
+      data: GameNoticeModel,
+      params: RequestParams = {},
+    ) =>
       this.request<GameNotice, RequestResponse>({
         path: `/api/edit/games/${id}/notices`,
         method: "POST",
@@ -3100,6 +3696,28 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
+     * @description Add a new division for a game; requires administrator privileges
+     *
+     * @tags Edit
+     * @name EditCreateDivision
+     * @summary Create Division
+     * @request POST:/api/edit/games/{id}/divisions
+     */
+    editCreateDivision: (
+      id: number,
+      data: DivisionCreateModel,
+      params: RequestParams = {},
+    ) =>
+      this.request<Division, RequestResponse>({
+        path: `/api/edit/games/${id}/divisions`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
      * @description Testing a game challenge container requires administrator privileges
      *
      * @tags Edit
@@ -3107,11 +3725,34 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Test Game Challenge Container
      * @request POST:/api/edit/games/{id}/challenges/{cId}/container
      */
-    editCreateTestContainer: (id: number, cId: number, params: RequestParams = {}) =>
+    editCreateTestContainer: (
+      id: number,
+      cId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<ContainerInfoModel, RequestResponse>({
         path: `/api/edit/games/${id}/challenges/${cId}/container`,
         method: "POST",
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Delete a division for a game; requires administrator privileges
+     *
+     * @tags Edit
+     * @name EditDeleteDivision
+     * @summary Delete Division
+     * @request DELETE:/api/edit/games/{id}/divisions/{divisionId}
+     */
+    editDeleteDivision: (
+      id: number,
+      divisionId: number,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, RequestResponse>({
+        path: `/api/edit/games/${id}/divisions/${divisionId}`,
+        method: "DELETE",
         ...params,
       }),
 
@@ -3139,7 +3780,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Delete Game Notice
      * @request DELETE:/api/edit/games/{id}/notices/{noticeId}
      */
-    editDeleteGameNotice: (id: number, noticeId: number, params: RequestParams = {}) =>
+    editDeleteGameNotice: (
+      id: number,
+      noticeId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/edit/games/${id}/notices/${noticeId}`,
         method: "DELETE",
@@ -3185,12 +3830,78 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Destroy Test Game Challenge Container
      * @request DELETE:/api/edit/games/{id}/challenges/{cId}/container
      */
-    editDestroyTestContainer: (id: number, cId: number, params: RequestParams = {}) =>
+    editDestroyTestContainer: (
+      id: number,
+      cId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/edit/games/${id}/challenges/${cId}/container`,
         method: "DELETE",
         ...params,
       }),
+
+    /**
+     * No description
+     *
+     * @tags Edit
+     * @name EditFlushScoreboardCache
+     * @summary Flush Scoreboard Cache
+     * @request POST:/api/edit/games/{id}/scoreboard/flush
+     */
+    editFlushScoreboardCache: (id: number, params: RequestParams = {}) =>
+      this.request<void, RequestResponse>({
+        path: `/api/edit/games/${id}/scoreboard/flush`,
+        method: "POST",
+        ...params,
+      }),
+
+    /**
+     * @description Retrieve all divisions for a game; requires administrator privileges
+     *
+     * @tags Edit
+     * @name EditGetDivisions
+     * @summary Get Divisions
+     * @request GET:/api/edit/games/{id}/divisions
+     */
+    editGetDivisions: (id: number, params: RequestParams = {}) =>
+      this.request<Division[], RequestResponse>({
+        path: `/api/edit/games/${id}/divisions`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+    /**
+     * @description Retrieve all divisions for a game; requires administrator privileges
+     *
+     * @tags Edit
+     * @name EditGetDivisions
+     * @summary Get Divisions
+     * @request GET:/api/edit/games/{id}/divisions
+     */
+    useEditGetDivisions: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<Division[], RequestResponse>(
+        doFetch ? `/api/edit/games/${id}/divisions` : null,
+        options,
+      ),
+
+    /**
+     * @description Retrieve all divisions for a game; requires administrator privileges
+     *
+     * @tags Edit
+     * @name EditGetDivisions
+     * @summary Get Divisions
+     * @request GET:/api/edit/games/{id}/divisions
+     */
+    mutateEditGetDivisions: (
+      id: number,
+      data?: Division[] | Promise<Division[]>,
+      options?: MutatorOptions,
+    ) => mutate<Division[]>(`/api/edit/games/${id}/divisions`, data, options),
 
     /**
      * @description Retrieving a game requires administrator privileges
@@ -3215,8 +3926,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get Game
      * @request GET:/api/edit/games/{id}
      */
-    useEditGetGame: (id: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<GameInfoModel, RequestResponse>(doFetch ? `/api/edit/games/${id}` : null, options),
+    useEditGetGame: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<GameInfoModel, RequestResponse>(
+        doFetch ? `/api/edit/games/${id}` : null,
+        options,
+      ),
 
     /**
      * @description Retrieving a game requires administrator privileges
@@ -3226,8 +3944,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get Game
      * @request GET:/api/edit/games/{id}
      */
-    mutateEditGetGame: (id: number, data?: GameInfoModel | Promise<GameInfoModel>, options?: MutatorOptions) =>
-      mutate<GameInfoModel>(`/api/edit/games/${id}`, data, options),
+    mutateEditGetGame: (
+      id: number,
+      data?: GameInfoModel | Promise<GameInfoModel>,
+      options?: MutatorOptions,
+    ) => mutate<GameInfoModel>(`/api/edit/games/${id}`, data, options),
 
     /**
      * @description Retrieving a game challenge requires administrator privileges
@@ -3237,7 +3958,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get Game Challenge
      * @request GET:/api/edit/games/{id}/challenges/{cId}
      */
-    editGetGameChallenge: (id: number, cId: number, params: RequestParams = {}) =>
+    editGetGameChallenge: (
+      id: number,
+      cId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<ChallengeEditDetailModel, RequestResponse>({
         path: `/api/edit/games/${id}/challenges/${cId}`,
         method: "GET",
@@ -3252,7 +3977,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get Game Challenge
      * @request GET:/api/edit/games/{id}/challenges/{cId}
      */
-    useEditGetGameChallenge: (id: number, cId: number, options?: SWRConfiguration, doFetch: boolean = true) =>
+    useEditGetGameChallenge: (
+      id: number,
+      cId: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
       useSWR<ChallengeEditDetailModel, RequestResponse>(
         doFetch ? `/api/edit/games/${id}/challenges/${cId}` : null,
         options,
@@ -3271,7 +4001,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       cId: number,
       data?: ChallengeEditDetailModel | Promise<ChallengeEditDetailModel>,
       options?: MutatorOptions,
-    ) => mutate<ChallengeEditDetailModel>(`/api/edit/games/${id}/challenges/${cId}`, data, options),
+    ) =>
+      mutate<ChallengeEditDetailModel>(
+        `/api/edit/games/${id}/challenges/${cId}`,
+        data,
+        options,
+      ),
 
     /**
      * @description Retrieving all game challenges requires administrator privileges
@@ -3296,8 +4031,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get All Game Challenges
      * @request GET:/api/edit/games/{id}/challenges
      */
-    useEditGetGameChallenges: (id: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<ChallengeInfoModel[], RequestResponse>(doFetch ? `/api/edit/games/${id}/challenges` : null, options),
+    useEditGetGameChallenges: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<ChallengeInfoModel[], RequestResponse>(
+        doFetch ? `/api/edit/games/${id}/challenges` : null,
+        options,
+      ),
 
     /**
      * @description Retrieving all game challenges requires administrator privileges
@@ -3311,7 +4053,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       id: number,
       data?: ChallengeInfoModel[] | Promise<ChallengeInfoModel[]>,
       options?: MutatorOptions,
-    ) => mutate<ChallengeInfoModel[]>(`/api/edit/games/${id}/challenges`, data, options),
+    ) =>
+      mutate<ChallengeInfoModel[]>(
+        `/api/edit/games/${id}/challenges`,
+        data,
+        options,
+      ),
 
     /**
      * @description Retrieving game notices requires administrator privileges
@@ -3336,8 +4083,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get Game Notices
      * @request GET:/api/edit/games/{id}/notices
      */
-    useEditGetGameNotices: (id: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<GameNotice[], RequestResponse>(doFetch ? `/api/edit/games/${id}/notices` : null, options),
+    useEditGetGameNotices: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<GameNotice[], RequestResponse>(
+        doFetch ? `/api/edit/games/${id}/notices` : null,
+        options,
+      ),
 
     /**
      * @description Retrieving game notices requires administrator privileges
@@ -3347,8 +4101,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get Game Notices
      * @request GET:/api/edit/games/{id}/notices
      */
-    mutateEditGetGameNotices: (id: number, data?: GameNotice[] | Promise<GameNotice[]>, options?: MutatorOptions) =>
-      mutate<GameNotice[]>(`/api/edit/games/${id}/notices`, data, options),
+    mutateEditGetGameNotices: (
+      id: number,
+      data?: GameNotice[] | Promise<GameNotice[]>,
+      options?: MutatorOptions,
+    ) => mutate<GameNotice[]>(`/api/edit/games/${id}/notices`, data, options),
 
     /**
      * @description Retrieving the game list requires administrator privileges
@@ -3360,7 +4117,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      */
     editGetGames: (
       query?: {
-        /** @format int32 */
+        /**
+         * @format int32
+         * @min 0
+         * @max 100
+         */
         count?: number;
         /** @format int32 */
         skip?: number;
@@ -3384,14 +4145,22 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      */
     useEditGetGames: (
       query?: {
-        /** @format int32 */
+        /**
+         * @format int32
+         * @min 0
+         * @max 100
+         */
         count?: number;
         /** @format int32 */
         skip?: number;
       },
       options?: SWRConfiguration,
       doFetch: boolean = true,
-    ) => useSWR<ArrayResponseOfGameInfoModel, RequestResponse>(doFetch ? [`/api/edit/games`, query] : null, options),
+    ) =>
+      useSWR<ArrayResponseOfGameInfoModel, RequestResponse>(
+        doFetch ? [`/api/edit/games`, query] : null,
+        options,
+      ),
 
     /**
      * @description Retrieving the game list requires administrator privileges
@@ -3403,14 +4172,25 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      */
     mutateEditGetGames: (
       query?: {
-        /** @format int32 */
+        /**
+         * @format int32
+         * @min 0
+         * @max 100
+         */
         count?: number;
         /** @format int32 */
         skip?: number;
       },
-      data?: ArrayResponseOfGameInfoModel | Promise<ArrayResponseOfGameInfoModel>,
+      data?:
+        | ArrayResponseOfGameInfoModel
+        | Promise<ArrayResponseOfGameInfoModel>,
       options?: MutatorOptions,
-    ) => mutate<ArrayResponseOfGameInfoModel>([`/api/edit/games`, query], data, options),
+    ) =>
+      mutate<ArrayResponseOfGameInfoModel>(
+        [`/api/edit/games`, query],
+        data,
+        options,
+      ),
 
     /**
      * @description Deleting a game challenge flag requires administrator privileges
@@ -3420,7 +4200,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Delete Game Challenge Flag
      * @request DELETE:/api/edit/games/{id}/challenges/{cId}/flags/{fId}
      */
-    editRemoveFlag: (id: number, cId: number, fId: number, params: RequestParams = {}) =>
+    editRemoveFlag: (
+      id: number,
+      cId: number,
+      fId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<TaskStatus, RequestResponse>({
         path: `/api/edit/games/${id}/challenges/${cId}/flags/${fId}`,
         method: "DELETE",
@@ -3436,7 +4221,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Delete Game Challenge
      * @request DELETE:/api/edit/games/{id}/challenges/{cId}
      */
-    editRemoveGameChallenge: (id: number, cId: number, params: RequestParams = {}) =>
+    editRemoveGameChallenge: (
+      id: number,
+      cId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/edit/games/${id}/challenges/${cId}`,
         method: "DELETE",
@@ -3451,10 +4240,38 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Update Game Challenge Attachment
      * @request POST:/api/edit/games/{id}/challenges/{cId}/attachment
      */
-    editUpdateAttachment: (id: number, cId: number, data: AttachmentCreateModel, params: RequestParams = {}) =>
+    editUpdateAttachment: (
+      id: number,
+      cId: number,
+      data: AttachmentCreateModel,
+      params: RequestParams = {},
+    ) =>
       this.request<number, RequestResponse>({
         path: `/api/edit/games/${id}/challenges/${cId}/attachment`,
         method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Update a division for a game; requires administrator privileges
+     *
+     * @tags Edit
+     * @name EditUpdateDivision
+     * @summary Update Division
+     * @request PUT:/api/edit/games/{id}/divisions/{divisionId}
+     */
+    editUpdateDivision: (
+      id: number,
+      divisionId: number,
+      data: DivisionEditModel,
+      params: RequestParams = {},
+    ) =>
+      this.request<Division, RequestResponse>({
+        path: `/api/edit/games/${id}/divisions/${divisionId}`,
+        method: "PUT",
         body: data,
         type: ContentType.Json,
         format: "json",
@@ -3469,7 +4286,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Update Game
      * @request PUT:/api/edit/games/{id}
      */
-    editUpdateGame: (id: number, data: GameInfoModel, params: RequestParams = {}) =>
+    editUpdateGame: (
+      id: number,
+      data: GameInfoModel,
+      params: RequestParams = {},
+    ) =>
       this.request<GameInfoModel, RequestResponse>({
         path: `/api/edit/games/${id}`,
         method: "PUT",
@@ -3487,28 +4308,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Update Game Challenge Information
      * @request PUT:/api/edit/games/{id}/challenges/{cId}
      */
-    editUpdateGameChallenge: (id: number, cId: number, data: ChallengeUpdateModel, params: RequestParams = {}) =>
+    editUpdateGameChallenge: (
+      id: number,
+      cId: number,
+      data: ChallengeUpdateModel,
+      params: RequestParams = {},
+    ) =>
       this.request<ChallengeEditDetailModel, RequestResponse>({
         path: `/api/edit/games/${id}/challenges/${cId}`,
         method: "PUT",
         body: data,
         type: ContentType.Json,
         format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Updating the accepted count for all game challenges requires administrator privileges
-     *
-     * @tags Edit
-     * @name EditUpdateGameChallengesAcceptedCount
-     * @summary Update AC Counter for Challenges
-     * @request POST:/api/edit/games/{id}/challenges/updateaccepted
-     */
-    editUpdateGameChallengesAcceptedCount: (id: number, params: RequestParams = {}) =>
-      this.request<void, RequestResponse>({
-        path: `/api/edit/games/${id}/challenges/updateaccepted`,
-        method: "POST",
         ...params,
       }),
 
@@ -3520,7 +4331,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Update Game Notice
      * @request PUT:/api/edit/games/{id}/notices/{noticeId}
      */
-    editUpdateGameNotice: (id: number, noticeId: number, data: GameNoticeModel, params: RequestParams = {}) =>
+    editUpdateGameNotice: (
+      id: number,
+      noticeId: number,
+      data: GameNoticeModel,
+      params: RequestParams = {},
+    ) =>
       this.request<GameNotice, RequestResponse>({
         path: `/api/edit/games/${id}/notices/${noticeId}`,
         method: "PUT",
@@ -3563,7 +4379,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Update Post
      * @request PUT:/api/edit/posts/{id}
      */
-    editUpdatePost: (id: string, data: PostEditModel, params: RequestParams = {}) =>
+    editUpdatePost: (
+      id: string,
+      data: PostEditModel,
+      params: RequestParams = {},
+    ) =>
       this.request<PostDetailModel, RequestResponse>({
         path: `/api/edit/posts/${id}`,
         method: "PUT",
@@ -3597,8 +4417,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get team details in a game
      * @request GET:/api/game/{id}/details
      */
-    useGameChallengesWithTeamInfo: (id: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<GameDetailModel, RequestResponse>(doFetch ? `/api/game/${id}/details` : null, options),
+    useGameChallengesWithTeamInfo: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<GameDetailModel, RequestResponse>(
+        doFetch ? `/api/game/${id}/details` : null,
+        options,
+      ),
 
     /**
      * @description Retrieves all challenges of the game; requires User permission and active team participation
@@ -3637,8 +4464,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get game cheat information
      * @request GET:/api/game/{id}/cheatinfo
      */
-    useGameCheatInfo: (id: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<CheatInfoModel[], RequestResponse>(doFetch ? `/api/game/${id}/cheatinfo` : null, options),
+    useGameCheatInfo: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<CheatInfoModel[], RequestResponse>(
+        doFetch ? `/api/game/${id}/cheatinfo` : null,
+        options,
+      ),
 
     /**
      * @description Retrieves game cheat data; requires Monitor permission
@@ -3648,8 +4482,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get game cheat information
      * @request GET:/api/game/{id}/cheatinfo
      */
-    mutateGameCheatInfo: (id: number, data?: CheatInfoModel[] | Promise<CheatInfoModel[]>, options?: MutatorOptions) =>
-      mutate<CheatInfoModel[]>(`/api/game/${id}/cheatinfo`, data, options),
+    mutateGameCheatInfo: (
+      id: number,
+      data?: CheatInfoModel[] | Promise<CheatInfoModel[]>,
+      options?: MutatorOptions,
+    ) => mutate<CheatInfoModel[]>(`/api/game/${id}/cheatinfo`, data, options),
 
     /**
      * @description Creates a container; requires User permission
@@ -3659,7 +4496,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Creates a container
      * @request POST:/api/game/{id}/container/{challengeId}
      */
-    gameCreateContainer: (id: number, challengeId: number, params: RequestParams = {}) =>
+    gameCreateContainer: (
+      id: number,
+      challengeId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<ContainerInfoModel, RequestResponse>({
         path: `/api/game/${id}/container/${challengeId}`,
         method: "POST",
@@ -3675,7 +4516,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Deletes all traffic files
      * @request DELETE:/api/game/captures/{challengeId}/{partId}/all
      */
-    gameDeleteAllTeamTraffic: (challengeId: number, partId: number, params: RequestParams = {}) =>
+    gameDeleteAllTeamTraffic: (
+      challengeId: number,
+      partId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/game/captures/${challengeId}/${partId}/all`,
         method: "DELETE",
@@ -3690,7 +4535,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Deletes a container
      * @request DELETE:/api/game/{id}/container/{challengeId}
      */
-    gameDeleteContainer: (id: number, challengeId: number, params: RequestParams = {}) =>
+    gameDeleteContainer: (
+      id: number,
+      challengeId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/game/${id}/container/${challengeId}`,
         method: "DELETE",
@@ -3705,7 +4554,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Deletes a traffic file
      * @request DELETE:/api/game/captures/{challengeId}/{partId}/{filename}
      */
-    gameDeleteTeamTraffic: (challengeId: number, partId: number, filename: string, params: RequestParams = {}) =>
+    gameDeleteTeamTraffic: (
+      challengeId: number,
+      partId: number,
+      filename: string,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/game/captures/${challengeId}/${partId}/${filename}`,
         method: "DELETE",
@@ -3730,6 +4584,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         hideContainer?: boolean;
         /**
          * @format int32
+         * @min 0
+         * @max 100
          * @default 100
          */
         count?: number;
@@ -3766,6 +4622,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         hideContainer?: boolean;
         /**
          * @format int32
+         * @min 0
+         * @max 100
          * @default 100
          */
         count?: number;
@@ -3777,7 +4635,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       options?: SWRConfiguration,
       doFetch: boolean = true,
-    ) => useSWR<GameEvent[], RequestResponse>(doFetch ? [`/api/game/${id}/events`, query] : null, options),
+    ) =>
+      useSWR<GameEvent[], RequestResponse>(
+        doFetch ? [`/api/game/${id}/events`, query] : null,
+        options,
+      ),
 
     /**
      * @description Retrieves game event data; requires Monitor permission
@@ -3797,6 +4659,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         hideContainer?: boolean;
         /**
          * @format int32
+         * @min 0
+         * @max 100
          * @default 100
          */
         count?: number;
@@ -3818,7 +4682,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Extends container lifetime
      * @request POST:/api/game/{id}/container/{challengeId}/extend
      */
-    gameExtendContainerLifetime: (id: number, challengeId: number, params: RequestParams = {}) =>
+    gameExtendContainerLifetime: (
+      id: number,
+      challengeId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<ContainerInfoModel, RequestResponse>({
         path: `/api/game/${id}/container/${challengeId}/extend`,
         method: "POST",
@@ -3830,11 +4698,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @description Retrieves detailed information about the game
      *
      * @tags Game
-     * @name GameGames
+     * @name GameGame
      * @summary Get detailed game information
      * @request GET:/api/game/{id}
      */
-    gameGames: (id: number, params: RequestParams = {}) =>
+    gameGame: (id: number, params: RequestParams = {}) =>
       this.request<DetailedGameInfoModel, RequestResponse>({
         path: `/api/game/${id}`,
         method: "GET",
@@ -3845,63 +4713,130 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @description Retrieves detailed information about the game
      *
      * @tags Game
-     * @name GameGames
+     * @name GameGame
      * @summary Get detailed game information
      * @request GET:/api/game/{id}
      */
-    useGameGames: (id: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<DetailedGameInfoModel, RequestResponse>(doFetch ? `/api/game/${id}` : null, options),
+    useGameGame: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<DetailedGameInfoModel, RequestResponse>(
+        doFetch ? `/api/game/${id}` : null,
+        options,
+      ),
 
     /**
      * @description Retrieves detailed information about the game
      *
      * @tags Game
-     * @name GameGames
+     * @name GameGame
      * @summary Get detailed game information
      * @request GET:/api/game/{id}
      */
-    mutateGameGames: (
+    mutateGameGame: (
       id: number,
       data?: DetailedGameInfoModel | Promise<DetailedGameInfoModel>,
       options?: MutatorOptions,
     ) => mutate<DetailedGameInfoModel>(`/api/game/${id}`, data, options),
 
     /**
-     * @description Retrieves the latest ten games
+     * @description Retrieves game information in specified range
      *
      * @tags Game
-     * @name GameGamesAll
-     * @summary Get the latest games
+     * @name GameGames
+     * @summary Get games
      * @request GET:/api/game
      */
-    gameGamesAll: (params: RequestParams = {}) =>
-      this.request<BasicGameInfoModel[], RequestResponse>({
+    gameGames: (
+      query?: {
+        /**
+         * @format int32
+         * @min 0
+         * @max 50
+         * @default 10
+         */
+        count?: number;
+        /**
+         * @format int32
+         * @default 0
+         */
+        skip?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<ArrayResponseOfBasicGameInfoModel, RequestResponse>({
         path: `/api/game`,
         method: "GET",
+        query: query,
         format: "json",
         ...params,
       }),
     /**
-     * @description Retrieves the latest ten games
+     * @description Retrieves game information in specified range
      *
      * @tags Game
-     * @name GameGamesAll
-     * @summary Get the latest games
+     * @name GameGames
+     * @summary Get games
      * @request GET:/api/game
      */
-    useGameGamesAll: (options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<BasicGameInfoModel[], RequestResponse>(doFetch ? `/api/game` : null, options),
+    useGameGames: (
+      query?: {
+        /**
+         * @format int32
+         * @min 0
+         * @max 50
+         * @default 10
+         */
+        count?: number;
+        /**
+         * @format int32
+         * @default 0
+         */
+        skip?: number;
+      },
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<ArrayResponseOfBasicGameInfoModel, RequestResponse>(
+        doFetch ? [`/api/game`, query] : null,
+        options,
+      ),
 
     /**
-     * @description Retrieves the latest ten games
+     * @description Retrieves game information in specified range
      *
      * @tags Game
-     * @name GameGamesAll
-     * @summary Get the latest games
+     * @name GameGames
+     * @summary Get games
      * @request GET:/api/game
      */
-    mutateGameGamesAll: (data?: BasicGameInfoModel[] | Promise<BasicGameInfoModel[]>, options?: MutatorOptions) =>
-      mutate<BasicGameInfoModel[]>(`/api/game`, data, options),
+    mutateGameGames: (
+      query?: {
+        /**
+         * @format int32
+         * @min 0
+         * @max 50
+         * @default 10
+         */
+        count?: number;
+        /**
+         * @format int32
+         * @default 0
+         */
+        skip?: number;
+      },
+      data?:
+        | ArrayResponseOfBasicGameInfoModel
+        | Promise<ArrayResponseOfBasicGameInfoModel>,
+      options?: MutatorOptions,
+    ) =>
+      mutate<ArrayResponseOfBasicGameInfoModel>(
+        [`/api/game`, query],
+        data,
+        options,
+      ),
 
     /**
      * @description Downloads all traffic packet files for a team and challenge; requires Monitor permission
@@ -3911,7 +4846,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Download all traffic files
      * @request GET:/api/game/captures/{challengeId}/{partId}/all
      */
-    gameGetAllTeamTraffic: (challengeId: number, partId: number, params: RequestParams = {}) =>
+    gameGetAllTeamTraffic: (
+      challengeId: number,
+      partId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/game/captures/${challengeId}/${partId}/all`,
         method: "GET",
@@ -3926,7 +4865,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get challenge information
      * @request GET:/api/game/{id}/challenges/{challengeId}
      */
-    gameGetChallenge: (id: number, challengeId: number, params: RequestParams = {}) =>
+    gameGetChallenge: (
+      id: number,
+      challengeId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<ChallengeDetailModel, RequestResponse>({
         path: `/api/game/${id}/challenges/${challengeId}`,
         method: "GET",
@@ -3941,7 +4884,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get challenge information
      * @request GET:/api/game/{id}/challenges/{challengeId}
      */
-    useGameGetChallenge: (id: number, challengeId: number, options?: SWRConfiguration, doFetch: boolean = true) =>
+    useGameGetChallenge: (
+      id: number,
+      challengeId: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
       useSWR<ChallengeDetailModel, RequestResponse>(
         doFetch ? `/api/game/${id}/challenges/${challengeId}` : null,
         options,
@@ -3960,7 +4908,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       challengeId: number,
       data?: ChallengeDetailModel | Promise<ChallengeDetailModel>,
       options?: MutatorOptions,
-    ) => mutate<ChallengeDetailModel>(`/api/game/${id}/challenges/${challengeId}`, data, options),
+    ) =>
+      mutate<ChallengeDetailModel>(
+        `/api/game/${id}/challenges/${challengeId}`,
+        data,
+        options,
+      ),
 
     /**
      * @description Retrieves challenges with traffic capturing enabled; requires Monitor permission
@@ -3970,7 +4923,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get challenges with traffic capturing enabled
      * @request GET:/api/game/games/{id}/captures
      */
-    gameGetChallengesWithTrafficCapturing: (id: number, params: RequestParams = {}) =>
+    gameGetChallengesWithTrafficCapturing: (
+      id: number,
+      params: RequestParams = {},
+    ) =>
       this.request<ChallengeTrafficModel[], RequestResponse>({
         path: `/api/game/games/${id}/captures`,
         method: "GET",
@@ -3985,8 +4941,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get challenges with traffic capturing enabled
      * @request GET:/api/game/games/{id}/captures
      */
-    useGameGetChallengesWithTrafficCapturing: (id: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<ChallengeTrafficModel[], RequestResponse>(doFetch ? `/api/game/games/${id}/captures` : null, options),
+    useGameGetChallengesWithTrafficCapturing: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<ChallengeTrafficModel[], RequestResponse>(
+        doFetch ? `/api/game/games/${id}/captures` : null,
+        options,
+      ),
 
     /**
      * @description Retrieves challenges with traffic capturing enabled; requires Monitor permission
@@ -4000,7 +4963,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       id: number,
       data?: ChallengeTrafficModel[] | Promise<ChallengeTrafficModel[]>,
       options?: MutatorOptions,
-    ) => mutate<ChallengeTrafficModel[]>(`/api/game/games/${id}/captures`, data, options),
+    ) =>
+      mutate<ChallengeTrafficModel[]>(
+        `/api/game/games/${id}/captures`,
+        data,
+        options,
+      ),
 
     /**
      * @description Retrieves the list of captured teams for a game challenge; requires Monitor permission
@@ -4010,7 +4978,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get team captures in a challenge
      * @request GET:/api/game/captures/{challengeId}
      */
-    gameGetChallengeTraffic: (challengeId: number, params: RequestParams = {}) =>
+    gameGetChallengeTraffic: (
+      challengeId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<TeamTrafficModel[], RequestResponse>({
         path: `/api/game/captures/${challengeId}`,
         method: "GET",
@@ -4025,8 +4996,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get team captures in a challenge
      * @request GET:/api/game/captures/{challengeId}
      */
-    useGameGetChallengeTraffic: (challengeId: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<TeamTrafficModel[], RequestResponse>(doFetch ? `/api/game/captures/${challengeId}` : null, options),
+    useGameGetChallengeTraffic: (
+      challengeId: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<TeamTrafficModel[], RequestResponse>(
+        doFetch ? `/api/game/captures/${challengeId}` : null,
+        options,
+      ),
 
     /**
      * @description Retrieves the list of captured teams for a game challenge; requires Monitor permission
@@ -4040,7 +5018,59 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       challengeId: number,
       data?: TeamTrafficModel[] | Promise<TeamTrafficModel[]>,
       options?: MutatorOptions,
-    ) => mutate<TeamTrafficModel[]>(`/api/game/captures/${challengeId}`, data, options),
+    ) =>
+      mutate<TeamTrafficModel[]>(
+        `/api/game/captures/${challengeId}`,
+        data,
+        options,
+      ),
+
+    /**
+     * No description
+     *
+     * @tags Game
+     * @name GameGetGameJoinCheckInfo
+     * @summary Get check info for joining a game
+     * @request GET:/api/game/{id}/check
+     */
+    gameGetGameJoinCheckInfo: (id: number, params: RequestParams = {}) =>
+      this.request<GameJoinCheckInfoModel, RequestResponse>({
+        path: `/api/game/${id}/check`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+    /**
+     * No description
+     *
+     * @tags Game
+     * @name GameGetGameJoinCheckInfo
+     * @summary Get check info for joining a game
+     * @request GET:/api/game/{id}/check
+     */
+    useGameGetGameJoinCheckInfo: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<GameJoinCheckInfoModel, RequestResponse>(
+        doFetch ? `/api/game/${id}/check` : null,
+        options,
+      ),
+
+    /**
+     * No description
+     *
+     * @tags Game
+     * @name GameGetGameJoinCheckInfo
+     * @summary Get check info for joining a game
+     * @request GET:/api/game/{id}/check
+     */
+    mutateGameGetGameJoinCheckInfo: (
+      id: number,
+      data?: GameJoinCheckInfoModel | Promise<GameJoinCheckInfoModel>,
+      options?: MutatorOptions,
+    ) => mutate<GameJoinCheckInfoModel>(`/api/game/${id}/check`, data, options),
 
     /**
      * @description Retrieves a traffic packet file; requires Monitor permission
@@ -4050,7 +5080,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get a traffic file
      * @request GET:/api/game/captures/{challengeId}/{partId}/{filename}
      */
-    gameGetTeamTraffic: (challengeId: number, partId: number, filename: string, params: RequestParams = {}) =>
+    gameGetTeamTraffic: (
+      challengeId: number,
+      partId: number,
+      filename: string,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/game/captures/${challengeId}/${partId}/${filename}`,
         method: "GET",
@@ -4065,7 +5100,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get traffic files
      * @request GET:/api/game/captures/{challengeId}/{partId}
      */
-    gameGetTeamTrafficAll: (challengeId: number, partId: number, params: RequestParams = {}) =>
+    gameGetTeamTrafficAll: (
+      challengeId: number,
+      partId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<FileRecord[], RequestResponse>({
         path: `/api/game/captures/${challengeId}/${partId}`,
         method: "GET",
@@ -4085,7 +5124,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       partId: number,
       options?: SWRConfiguration,
       doFetch: boolean = true,
-    ) => useSWR<FileRecord[], RequestResponse>(doFetch ? `/api/game/captures/${challengeId}/${partId}` : null, options),
+    ) =>
+      useSWR<FileRecord[], RequestResponse>(
+        doFetch ? `/api/game/captures/${challengeId}/${partId}` : null,
+        options,
+      ),
 
     /**
      * @description Retrieves traffic packet files for a team and challenge; requires Monitor permission
@@ -4100,7 +5143,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       partId: number,
       data?: FileRecord[] | Promise<FileRecord[]>,
       options?: MutatorOptions,
-    ) => mutate<FileRecord[]>(`/api/game/captures/${challengeId}/${partId}`, data, options),
+    ) =>
+      mutate<FileRecord[]>(
+        `/api/game/captures/${challengeId}/${partId}`,
+        data,
+        options,
+      ),
 
     /**
      * @description Retrieves post-game writeup submission information; requires User permission
@@ -4125,8 +5173,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get writeup information
      * @request GET:/api/game/{id}/writeup
      */
-    useGameGetWriteup: (id: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<BasicWriteupInfoModel, RequestResponse>(doFetch ? `/api/game/${id}/writeup` : null, options),
+    useGameGetWriteup: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<BasicWriteupInfoModel, RequestResponse>(
+        doFetch ? `/api/game/${id}/writeup` : null,
+        options,
+      ),
 
     /**
      * @description Retrieves post-game writeup submission information; requires User permission
@@ -4140,7 +5195,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       id: number,
       data?: BasicWriteupInfoModel | Promise<BasicWriteupInfoModel>,
       options?: MutatorOptions,
-    ) => mutate<BasicWriteupInfoModel>(`/api/game/${id}/writeup`, data, options),
+    ) =>
+      mutate<BasicWriteupInfoModel>(`/api/game/${id}/writeup`, data, options),
 
     /**
      * @description Join a game; requires User permission
@@ -4150,7 +5206,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Join a game
      * @request POST:/api/game/{id}
      */
-    gameJoinGame: (id: number, data: GameJoinModel, params: RequestParams = {}) =>
+    gameJoinGame: (
+      id: number,
+      data: GameJoinModel,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/game/${id}`,
         method: "POST",
@@ -4187,11 +5247,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /**
          * @format int32
+         * @min 0
+         * @max 100
          * @default 100
          */
         count?: number;
         /**
          * @format int32
+         * @min 0
+         * @max 300
          * @default 0
          */
         skip?: number;
@@ -4218,18 +5282,26 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /**
          * @format int32
+         * @min 0
+         * @max 100
          * @default 100
          */
         count?: number;
         /**
          * @format int32
+         * @min 0
+         * @max 300
          * @default 0
          */
         skip?: number;
       },
       options?: SWRConfiguration,
       doFetch: boolean = true,
-    ) => useSWR<GameNotice[], RequestResponse>(doFetch ? [`/api/game/${id}/notices`, query] : null, options),
+    ) =>
+      useSWR<GameNotice[], RequestResponse>(
+        doFetch ? [`/api/game/${id}/notices`, query] : null,
+        options,
+      ),
 
     /**
      * @description Retrieves game notice data
@@ -4244,18 +5316,23 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /**
          * @format int32
+         * @min 0
+         * @max 100
          * @default 100
          */
         count?: number;
         /**
          * @format int32
+         * @min 0
+         * @max 300
          * @default 0
          */
         skip?: number;
       },
       data?: GameNotice[] | Promise<GameNotice[]>,
       options?: MutatorOptions,
-    ) => mutate<GameNotice[]>([`/api/game/${id}/notices`, query], data, options),
+    ) =>
+      mutate<GameNotice[]>([`/api/game/${id}/notices`, query], data, options),
 
     /**
      * @description Retrieves all participation information of the game; requires Admin permission
@@ -4280,8 +5357,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get all game participations
      * @request GET:/api/game/{id}/participations
      */
-    useGameParticipations: (id: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<ParticipationInfoModel[], RequestResponse>(doFetch ? `/api/game/${id}/participations` : null, options),
+    useGameParticipations: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<ParticipationInfoModel[], RequestResponse>(
+        doFetch ? `/api/game/${id}/participations` : null,
+        options,
+      ),
 
     /**
      * @description Retrieves all participation information of the game; requires Admin permission
@@ -4295,7 +5379,88 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       id: number,
       data?: ParticipationInfoModel[] | Promise<ParticipationInfoModel[]>,
       options?: MutatorOptions,
-    ) => mutate<ParticipationInfoModel[]>(`/api/game/${id}/participations`, data, options),
+    ) =>
+      mutate<ParticipationInfoModel[]>(
+        `/api/game/${id}/participations`,
+        data,
+        options,
+      ),
+
+    /**
+     * @description Retrieves recent game in three weeks
+     *
+     * @tags Game
+     * @name GameRecentGames
+     * @summary Get the recent games
+     * @request GET:/api/game/recent
+     */
+    gameRecentGames: (
+      query?: {
+        /**
+         * Limit of the number of games
+         * @format int32
+         * @min 0
+         * @max 50
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<BasicGameInfoModel[], RequestResponse>({
+        path: `/api/game/recent`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+    /**
+     * @description Retrieves recent game in three weeks
+     *
+     * @tags Game
+     * @name GameRecentGames
+     * @summary Get the recent games
+     * @request GET:/api/game/recent
+     */
+    useGameRecentGames: (
+      query?: {
+        /**
+         * Limit of the number of games
+         * @format int32
+         * @min 0
+         * @max 50
+         */
+        limit?: number;
+      },
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<BasicGameInfoModel[], RequestResponse>(
+        doFetch ? [`/api/game/recent`, query] : null,
+        options,
+      ),
+
+    /**
+     * @description Retrieves recent game in three weeks
+     *
+     * @tags Game
+     * @name GameRecentGames
+     * @summary Get the recent games
+     * @request GET:/api/game/recent
+     */
+    mutateGameRecentGames: (
+      query?: {
+        /**
+         * Limit of the number of games
+         * @format int32
+         * @min 0
+         * @max 50
+         */
+        limit?: number;
+      },
+      data?: BasicGameInfoModel[] | Promise<BasicGameInfoModel[]>,
+      options?: MutatorOptions,
+    ) =>
+      mutate<BasicGameInfoModel[]>([`/api/game/recent`, query], data, options),
 
     /**
      * @description Retrieves the scoreboard data
@@ -4320,8 +5485,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get the scoreboard
      * @request GET:/api/game/{id}/scoreboard
      */
-    useGameScoreboard: (id: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<ScoreboardModel, RequestResponse>(doFetch ? `/api/game/${id}/scoreboard` : null, options),
+    useGameScoreboard: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<ScoreboardModel, RequestResponse>(
+        doFetch ? `/api/game/${id}/scoreboard` : null,
+        options,
+      ),
 
     /**
      * @description Retrieves the scoreboard data
@@ -4331,8 +5503,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get the scoreboard
      * @request GET:/api/game/{id}/scoreboard
      */
-    mutateGameScoreboard: (id: number, data?: ScoreboardModel | Promise<ScoreboardModel>, options?: MutatorOptions) =>
-      mutate<ScoreboardModel>(`/api/game/${id}/scoreboard`, data, options),
+    mutateGameScoreboard: (
+      id: number,
+      data?: ScoreboardModel | Promise<ScoreboardModel>,
+      options?: MutatorOptions,
+    ) => mutate<ScoreboardModel>(`/api/game/${id}/scoreboard`, data, options),
 
     /**
      * @description Downloads the game scoreboard; requires Monitor permission
@@ -4357,7 +5532,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Queries flag status
      * @request GET:/api/game/{id}/challenges/{challengeId}/status/{submitId}
      */
-    gameStatus: (id: number, challengeId: number, submitId: number, params: RequestParams = {}) =>
+    gameStatus: (
+      id: number,
+      challengeId: number,
+      submitId: number,
+      params: RequestParams = {},
+    ) =>
       this.request<AnswerResult, RequestResponse>({
         path: `/api/game/${id}/challenges/${challengeId}/status/${submitId}`,
         method: "GET",
@@ -4380,7 +5560,9 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       doFetch: boolean = true,
     ) =>
       useSWR<AnswerResult, RequestResponse>(
-        doFetch ? `/api/game/${id}/challenges/${challengeId}/status/${submitId}` : null,
+        doFetch
+          ? `/api/game/${id}/challenges/${challengeId}/status/${submitId}`
+          : null,
         options,
       ),
 
@@ -4398,7 +5580,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       submitId: number,
       data?: AnswerResult | Promise<AnswerResult>,
       options?: MutatorOptions,
-    ) => mutate<AnswerResult>(`/api/game/${id}/challenges/${challengeId}/status/${submitId}`, data, options),
+    ) =>
+      mutate<AnswerResult>(
+        `/api/game/${id}/challenges/${challengeId}/status/${submitId}`,
+        data,
+        options,
+      ),
 
     /**
      * @description Retrieves game submission data; requires Monitor permission
@@ -4415,6 +5602,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         type?: AnswerResult | null;
         /**
          * @format int32
+         * @min 0
+         * @max 100
          * @default 100
          */
         count?: number;
@@ -4448,6 +5637,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         type?: AnswerResult | null;
         /**
          * @format int32
+         * @min 0
+         * @max 100
          * @default 100
          */
         count?: number;
@@ -4459,7 +5650,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       options?: SWRConfiguration,
       doFetch: boolean = true,
-    ) => useSWR<Submission[], RequestResponse>(doFetch ? [`/api/game/${id}/submissions`, query] : null, options),
+    ) =>
+      useSWR<Submission[], RequestResponse>(
+        doFetch ? [`/api/game/${id}/submissions`, query] : null,
+        options,
+      ),
 
     /**
      * @description Retrieves game submission data; requires Monitor permission
@@ -4476,6 +5671,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         type?: AnswerResult | null;
         /**
          * @format int32
+         * @min 0
+         * @max 100
          * @default 100
          */
         count?: number;
@@ -4487,7 +5684,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       data?: Submission[] | Promise<Submission[]>,
       options?: MutatorOptions,
-    ) => mutate<Submission[]>([`/api/game/${id}/submissions`, query], data, options),
+    ) =>
+      mutate<Submission[]>(
+        [`/api/game/${id}/submissions`, query],
+        data,
+        options,
+      ),
 
     /**
      * @description Downloads all submissions of the game; requires Monitor permission
@@ -4512,7 +5714,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Submits a flag
      * @request POST:/api/game/{id}/challenges/{challengeId}
      */
-    gameSubmit: (id: number, challengeId: number, data: FlagSubmitModel, params: RequestParams = {}) =>
+    gameSubmit: (
+      id: number,
+      challengeId: number,
+      data: FlagSubmitModel,
+      params: RequestParams = {},
+    ) =>
       this.request<number, RequestResponse>({
         path: `/api/game/${id}/challenges/${challengeId}`,
         method: "POST",
@@ -4570,8 +5777,14 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get Captcha configuration
      * @request GET:/api/captcha
      */
-    useInfoGetClientCaptchaInfo: (options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<ClientCaptchaInfoModel, any>(doFetch ? `/api/captcha` : null, options),
+    useInfoGetClientCaptchaInfo: (
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<ClientCaptchaInfoModel, any>(
+        doFetch ? `/api/captcha` : null,
+        options,
+      ),
 
     /**
      * @description Get Captcha configuration
@@ -4609,8 +5822,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get client configuration
      * @request GET:/api/config
      */
-    useInfoGetClientConfig: (options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<ClientConfig, any>(doFetch ? `/api/config` : null, options),
+    useInfoGetClientConfig: (
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) => useSWR<ClientConfig, any>(doFetch ? `/api/config` : null, options),
 
     /**
      * @description Get client configuration
@@ -4620,8 +5835,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get client configuration
      * @request GET:/api/config
      */
-    mutateInfoGetClientConfig: (data?: ClientConfig | Promise<ClientConfig>, options?: MutatorOptions) =>
-      mutate<ClientConfig>(`/api/config`, data, options),
+    mutateInfoGetClientConfig: (
+      data?: ClientConfig | Promise<ClientConfig>,
+      options?: MutatorOptions,
+    ) => mutate<ClientConfig>(`/api/config`, data, options),
 
     /**
      * @description Get the latest posts
@@ -4646,8 +5863,14 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get the latest posts
      * @request GET:/api/posts/latest
      */
-    useInfoGetLatestPosts: (options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<PostInfoModel[], any>(doFetch ? `/api/posts/latest` : null, options),
+    useInfoGetLatestPosts: (
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<PostInfoModel[], any>(
+        doFetch ? `/api/posts/latest` : null,
+        options,
+      ),
 
     /**
      * @description Get the latest posts
@@ -4657,8 +5880,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get the latest posts
      * @request GET:/api/posts/latest
      */
-    mutateInfoGetLatestPosts: (data?: PostInfoModel[] | Promise<PostInfoModel[]>, options?: MutatorOptions) =>
-      mutate<PostInfoModel[]>(`/api/posts/latest`, data, options),
+    mutateInfoGetLatestPosts: (
+      data?: PostInfoModel[] | Promise<PostInfoModel[]>,
+      options?: MutatorOptions,
+    ) => mutate<PostInfoModel[]>(`/api/posts/latest`, data, options),
 
     /**
      * @description Get post details
@@ -4683,8 +5908,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get post details
      * @request GET:/api/posts/{id}
      */
-    useInfoGetPost: (id: string, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<PostDetailModel, RequestResponse>(doFetch ? `/api/posts/${id}` : null, options),
+    useInfoGetPost: (
+      id: string,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<PostDetailModel, RequestResponse>(
+        doFetch ? `/api/posts/${id}` : null,
+        options,
+      ),
 
     /**
      * @description Get post details
@@ -4694,8 +5926,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get post details
      * @request GET:/api/posts/{id}
      */
-    mutateInfoGetPost: (id: string, data?: PostDetailModel | Promise<PostDetailModel>, options?: MutatorOptions) =>
-      mutate<PostDetailModel>(`/api/posts/${id}`, data, options),
+    mutateInfoGetPost: (
+      id: string,
+      data?: PostDetailModel | Promise<PostDetailModel>,
+      options?: MutatorOptions,
+    ) => mutate<PostDetailModel>(`/api/posts/${id}`, data, options),
 
     /**
      * @description Get all posts
@@ -4731,8 +5966,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get all posts
      * @request GET:/api/posts
      */
-    mutateInfoGetPosts: (data?: PostInfoModel[] | Promise<PostInfoModel[]>, options?: MutatorOptions) =>
-      mutate<PostInfoModel[]>(`/api/posts`, data, options),
+    mutateInfoGetPosts: (
+      data?: PostInfoModel[] | Promise<PostInfoModel[]>,
+      options?: MutatorOptions,
+    ) => mutate<PostInfoModel[]>(`/api/posts`, data, options),
 
     /**
      * @description Create Pow Captcha, valid for 5 minutes
@@ -4757,8 +5994,14 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Create Pow Captcha
      * @request GET:/api/captcha/powchallenge
      */
-    useInfoPowChallenge: (options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<HashPowChallenge, RequestResponse>(doFetch ? `/api/captcha/powchallenge` : null, options),
+    useInfoPowChallenge: (
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<HashPowChallenge, RequestResponse>(
+        doFetch ? `/api/captcha/powchallenge` : null,
+        options,
+      ),
 
     /**
      * @description Create Pow Captcha, valid for 5 minutes
@@ -4768,8 +6011,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Create Pow Captcha
      * @request GET:/api/captcha/powchallenge
      */
-    mutateInfoPowChallenge: (data?: HashPowChallenge | Promise<HashPowChallenge>, options?: MutatorOptions) =>
-      mutate<HashPowChallenge>(`/api/captcha/powchallenge`, data, options),
+    mutateInfoPowChallenge: (
+      data?: HashPowChallenge | Promise<HashPowChallenge>,
+      options?: MutatorOptions,
+    ) => mutate<HashPowChallenge>(`/api/captcha/powchallenge`, data, options),
   };
   proxy = {
     /**
@@ -4902,8 +6147,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get team information
      * @request GET:/api/team/{id}
      */
-    useTeamGetBasicInfo: (id: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<TeamInfoModel, RequestResponse>(doFetch ? `/api/team/${id}` : null, options),
+    useTeamGetBasicInfo: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<TeamInfoModel, RequestResponse>(
+        doFetch ? `/api/team/${id}` : null,
+        options,
+      ),
 
     /**
      * @description Get basic information of a team by ID
@@ -4913,8 +6165,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get team information
      * @request GET:/api/team/{id}
      */
-    mutateTeamGetBasicInfo: (id: number, data?: TeamInfoModel | Promise<TeamInfoModel>, options?: MutatorOptions) =>
-      mutate<TeamInfoModel>(`/api/team/${id}`, data, options),
+    mutateTeamGetBasicInfo: (
+      id: number,
+      data?: TeamInfoModel | Promise<TeamInfoModel>,
+      options?: MutatorOptions,
+    ) => mutate<TeamInfoModel>(`/api/team/${id}`, data, options),
 
     /**
      * @description Get basic information of a team based on user
@@ -4939,8 +6194,14 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get current team information
      * @request GET:/api/team
      */
-    useTeamGetTeamsInfo: (options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<TeamInfoModel[], RequestResponse>(doFetch ? `/api/team` : null, options),
+    useTeamGetTeamsInfo: (
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<TeamInfoModel[], RequestResponse>(
+        doFetch ? `/api/team` : null,
+        options,
+      ),
 
     /**
      * @description Get basic information of a team based on user
@@ -4950,8 +6211,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get current team information
      * @request GET:/api/team
      */
-    mutateTeamGetTeamsInfo: (data?: TeamInfoModel[] | Promise<TeamInfoModel[]>, options?: MutatorOptions) =>
-      mutate<TeamInfoModel[]>(`/api/team`, data, options),
+    mutateTeamGetTeamsInfo: (
+      data?: TeamInfoModel[] | Promise<TeamInfoModel[]>,
+      options?: MutatorOptions,
+    ) => mutate<TeamInfoModel[]>(`/api/team`, data, options),
 
     /**
      * @description Get team invitation information, must be team creator
@@ -4976,8 +6239,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get invitation information
      * @request GET:/api/team/{id}/invite
      */
-    useTeamInviteCode: (id: number, options?: SWRConfiguration, doFetch: boolean = true) =>
-      useSWR<string, RequestResponse>(doFetch ? `/api/team/${id}/invite` : null, options),
+    useTeamInviteCode: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<string, RequestResponse>(
+        doFetch ? `/api/team/${id}/invite` : null,
+        options,
+      ),
 
     /**
      * @description Get team invitation information, must be team creator
@@ -4987,8 +6257,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get invitation information
      * @request GET:/api/team/{id}/invite
      */
-    mutateTeamInviteCode: (id: number, data?: string | Promise<string>, options?: MutatorOptions) =>
-      mutate<string>(`/api/team/${id}/invite`, data, options),
+    mutateTeamInviteCode: (
+      id: number,
+      data?: string | Promise<string>,
+      options?: MutatorOptions,
+    ) => mutate<string>(`/api/team/${id}/invite`, data, options),
 
     /**
      * @description User kick API, kick user with corresponding ID, requires team creator permission
@@ -5029,7 +6302,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Transfer team ownership
      * @request PUT:/api/team/{id}/transfer
      */
-    teamTransfer: (id: number, data: TeamTransferModel, params: RequestParams = {}) =>
+    teamTransfer: (
+      id: number,
+      data: TeamTransferModel,
+      params: RequestParams = {},
+    ) =>
       this.request<TeamInfoModel, RequestResponse>({
         path: `/api/team/${id}/transfer`,
         method: "PUT",
@@ -5063,7 +6340,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Update team information
      * @request PUT:/api/team/{id}
      */
-    teamUpdateTeam: (id: number, data: TeamUpdateModel, params: RequestParams = {}) =>
+    teamUpdateTeam: (
+      id: number,
+      data: TeamUpdateModel,
+      params: RequestParams = {},
+    ) =>
       this.request<TeamInfoModel, RequestResponse>({
         path: `/api/team/${id}`,
         method: "PUT",
@@ -5081,7 +6362,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Verify signature
      * @request POST:/api/team/verify
      */
-    teamVerifySignature: (data: SignatureVerifyModel, params: RequestParams = {}) =>
+    teamVerifySignature: (
+      data: SignatureVerifyModel,
+      params: RequestParams = {},
+    ) =>
       this.request<void, RequestResponse>({
         path: `/api/team/verify`,
         method: "POST",
@@ -5095,7 +6379,9 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 const api = new Api();
 export default api;
 
-export const fetcher = async (args: string | [string, Record<string, unknown>]) => {
+export const fetcher = async (
+  args: string | [string, Record<string, unknown>],
+) => {
   if (typeof args === "string") {
     const response = await api.request({ path: args });
     return response.data;

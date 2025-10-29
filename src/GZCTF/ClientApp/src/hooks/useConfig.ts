@@ -1,13 +1,12 @@
-/*
- * This file is protected and may not be modified without permission.
- * See LICENSE_ADDENDUM.txt for details.
- */
+// SPDX-License-Identifier: LicenseRef-GZCTF-Restricted
+// Copyright (C) 2022-2025 GZTimeWalker
+// Restricted Component - NOT under AGPLv3.
+// See licenses/LicenseRef-GZCTF-Restricted.txt
 import { useLocalStorage } from '@mantine/hooks'
 import dayjs from 'dayjs'
-import LZString from 'lz-string'
 import { useEffect, useRef } from 'react'
-import { Cache, SWRConfiguration } from 'swr'
-import api, { ClientConfig } from '@Api'
+import { SWRConfiguration } from 'swr'
+import api, { ClientConfig, ContainerPortMappingType } from '@Api'
 
 export const OnceSWRConfig: SWRConfiguration = {
   refreshInterval: 0,
@@ -36,18 +35,18 @@ export const useConfig = () => {
     refreshWhenOffline: false,
   })
 
-  const [clientConfig, setClientConfig] = useLocalStorage({
+  const [clientConfig, setClientConfig] = useLocalStorage<ClientConfig>({
     key: 'client-config',
     defaultValue: {
       title: 'GZ',
       slogan: 'Hack for fun not for profit',
-      portMapping: 'Default',
+      portMapping: ContainerPortMappingType.Default,
       footerInfo: null,
       customTheme: null,
       defaultLifetime: 120,
       extensionDuration: 120,
       renewalWindow: 10,
-    } as ClientConfig,
+    },
   })
 
   useEffect(() => {
@@ -94,9 +93,10 @@ const showBanner = () => {
   const textClr = ['font-weight: bold', 'font-weight: bold; color: #4ccaaa']
   const badClr = ['font-weight: bold', 'font-weight: bold; color: #fe3030']
 
-  // The GZCTF identifier is protected by the License.
-  // DO NOT REMOVE OR MODIFY THE FOLLOWING LINE.
-  // Please see LICENSE_ADDENDUM.txt for details.
+  // GZCTF Banner Block
+  // Core licensed under AGPLv3; certain components under LicenseRef-GZCTF-Restricted.
+  // See NOTICE and LICENSE_ADDENDUM.txt for attribution & trademark guidance.
+  const current = new Date().getFullYear()
 
   const banner = `
   ██████╗ ███████╗           ██████╗████████╗███████╗
@@ -107,9 +107,10 @@ const showBanner = () => {
   ╚═════╝ ╚══════╝           ╚═════╝   ╚═╝   ╚═╝
   ${padding}%c@ %c${valid ? tag : 'Unknown'}
 
-%cCopyright (C) 2022-now, GZTimeWalker, All rights reserved.
+%cCopyright (C) 2022-${current}, GZTimeWalker, All rights reserved.
 
-%cLicense  : %cGNU Affero General Public License v3.0
+%cLicense  : %cGNU Affero General Public License v3.0 (Core)
+%cLicense  : %cLicenseRef-GZCTF-Restricted (Restricted components)
 %cCommit   : %c${valid ? sha : 'Unofficial build version'}
 %cBuilt at : %c${buildTime.format('YYYY-MM-DDTHH:mm:ssZ')}
 %cIssues   : %c${repo}/issues
@@ -121,7 +122,7 @@ const showBanner = () => {
     ...bannerClr.concat(bannerClr, bannerClr, bannerClr),
     ...(valid ? textClr : badClr),
     'font-weight: bold',
-    ...textClr.concat(valid ? textClr : badClr, textClr, textClr)
+    ...textClr.concat(textClr, valid ? textClr : badClr, textClr, textClr)
   )
 }
 
@@ -133,24 +134,4 @@ export const useBanner = () => {
       mounted.current = true
     }
   }, [])
-}
-
-const cacheKey = 'gzctf-cache'
-const cacheMap = new Map(JSON.parse(LZString.decompress(localStorage.getItem(cacheKey) || '') || '[]'))
-
-const saveCache = () => {
-  const appCache = LZString.compress(JSON.stringify(Array.from(cacheMap.entries())))
-  localStorage.setItem(cacheKey, appCache)
-}
-
-export const localCacheProvider = () => {
-  window.addEventListener('beforeunload', saveCache, true)
-  return cacheMap as Cache
-}
-
-export const clearLocalCache = () => {
-  window.removeEventListener('beforeunload', saveCache, true)
-  localStorage.removeItem(cacheKey)
-  cacheMap.clear()
-  window.location.reload()
 }

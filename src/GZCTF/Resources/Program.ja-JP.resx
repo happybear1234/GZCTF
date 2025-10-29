@@ -395,6 +395,12 @@
   <data name="CronJob_Stopped" xml:space="preserve">
     <value>スケジュールされたタスクが停止されました</value>
   </data>
+  <data name="CronJob_ExecuteFailed" xml:space="preserve">
+    <value>CronJob {0} の実行に失敗しました：{1}</value>
+  </data>
+  <data name="CronJob_LaunchedWatchDog" xml:space="preserve">
+    <value>別のインスタンスが CronJob を保持しているので、ウォッチドッグを実行しましょう。</value>
+  </data>
   <data name="Database_ConnectionFailed" xml:space="preserve">
     <value>データベースに接続できませんでした({0})、データベースの接続文字列を確認してください</value>
   </data>
@@ -561,7 +567,7 @@
     <value>提出は見つかりませんでした</value>
   </data>
   <data name="Game_TeamMemberLimitExceeded" xml:space="preserve">
-    <value>チームの参加者数が制限を超えています</value>
+    <value>チームの参加者数の上限を達しました</value>
   </data>
   <data name="Game_WriteupSubmitted" xml:space="preserve">
     <value>{0} は {1} の記事を正常に提出しました</value>
@@ -914,6 +920,9 @@
   <data name="Challenge_UseAssetsApiForDynamic" xml:space="preserve">
     <value>動的添付チャレンジについては、Assets API を使用して添付ファイルをアップロードしてください。</value>
   </data>
+  <data name="Challenge_SubmissionLimitExceeded" xml:space="preserve">
+    <value>提出制限に達しました</value>
+  </data>
   <data name="Container_AddressResolveFailed" xml:space="preserve">
     <value>コンテナのアドレスを解析できませんでした</value>
   </data>
@@ -989,8 +998,8 @@
   <data name="Team_MemberRemoved" xml:space="preserve">
     <value>チーム {0} から {1} を追放しました</value>
   </data>
-  <data name="Team_MultipleCreationNotAllowed" xml:space="preserve">
-    <value>複数のチームを作成することはできません</value>
+  <data name="Team_ExceededCreationLimit" xml:space="preserve">
+    <value>所有チーム数の上限を達しました</value>
   </data>
   <data name="Team_NameEmpty" xml:space="preserve">
     <value>チーム名は空にできません</value>
@@ -1045,5 +1054,14 @@
   </data>
   <data name="Init_StorageInitFailed" xml:space="preserve">
     <value>ストレージプロバイダーの初期化に失敗しました：{0}</value>
+  </data>
+  <data name="Division_NotFound" xml:space="preserve">
+    <value>ディビジョンが見つかりません</value>
+  </data>
+  <data name="Challenge_SubmissionNoPermission" xml:space="preserve">
+    <value>フラグを提出する権限がありません</value>
+  </data>
+  <data name="Challenge_DeadlinePassed" xml:space="preserve">
+    <value>このチャレンジの締め切りが過ぎています</value>
   </data>
 </root>

@@ -1,18 +1,21 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Channels;
-using FluentStorage;
-using FluentStorage.Blobs;
 using GZCTF.Middlewares;
+using GZCTF.Models;
 using GZCTF.Models.Internal;
 using GZCTF.Models.Request.Admin;
 using GZCTF.Models.Request.Game;
 using GZCTF.Repositories.Interface;
+using GZCTF.Services.Config;
+using GZCTF.Storage;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 
@@ -32,9 +35,11 @@ public class GameController(
     UserManager<UserInfo> userManager,
     ChannelWriter<Submission> channelWriter,
     IBlobStorage storage,
+    IConfigService configService,
     IBlobRepository blobService,
     IGameRepository gameRepository,
     ITeamRepository teamRepository,
+    IDivisionRepository divisionRepository,
     IGameEventRepository eventRepository,
     IGameNoticeRepository noticeRepository,
     ICheatInfoRepository cheatInfoRepository,
@@ -48,17 +53,46 @@ public class GameController(
     IStringLocalizer<Program> localizer) : ControllerBase
 {
     /// <summary>
-    /// Get the latest games
+    /// Get the recent games
     /// </summary>
     /// <remarks>
-    /// Retrieves the latest ten games
+    /// Retrieves recent game in three weeks
     /// </remarks>
+    /// <param name="limit">Limit of the number of games</param>
     /// <param name="token"></param>
     /// <response code="200">Successfully retrieved game information</response>
-    [HttpGet]
+    [HttpGet("Recent")]
     [ProducesResponseType(typeof(BasicGameInfoModel[]), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Games(CancellationToken token) =>
-        Ok(await gameRepository.GetBasicGameInfo(10, 0, token));
+    public async Task<IActionResult> RecentGames(
+        [FromQuery][Range(0, 50)] int limit,
+        CancellationToken token)
+    {
+        (BasicGameInfoModel[] games, DateTimeOffset lastModified) = await gameRepository.GetRecentGames(token);
+        var eTag = $"\"{lastModified.ToUnixTimeSeconds():X}-{limit}\"";
+        if (ContextHelper.IsNotModified(Request, Response, eTag, lastModified))
+            return StatusCode(StatusCodes.Status304NotModified);
+
+        return Ok(limit > 0 ? games.Take(limit) : games);
+    }
+
+    /// <summary>
+    /// Get games
+    /// </summary>
+    /// <remarks>
+    /// Retrieves game information in specified range
+    /// </remarks>
+    /// <param name="count"></param>
+    /// <param name="skip"></param>
+    /// <param name="token"></param>
+    /// <response code="200">Successfully retrieved game notices</response>
+    /// <response code="400">Game not found</response>
+    [HttpGet]
+    [EnableRateLimiting(nameof(RateLimiter.LimitPolicy.Query))]
+    [ResponseCache(VaryByQueryKeys = ["count", "skip"], Duration = 60)]
+    [ProducesResponseType(typeof(ArrayResponse<BasicGameInfoModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Games([FromQuery][Range(0, 50)] int count = 10,
+        [FromQuery] int skip = 0, CancellationToken token = default)
+        => Ok(await gameRepository.GetGameInfo(count, skip, token));
 
     /// <summary>
     /// Get detailed game information
@@ -73,18 +107,44 @@ public class GameController(
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(DetailedGameInfoModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Games(int id, CancellationToken token)
+    public async Task<IActionResult> Game(int id, CancellationToken token)
     {
-        ContextInfo context = await GetContextInfo(id, token: token);
+        var gameInfo = await gameRepository.GetDetailedGameInfo(id, token);
 
-        if (context.Game is null)
+        if (gameInfo is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
                 StatusCodes.Status404NotFound));
 
-        var count = await participationRepository.GetParticipationCount(context.Game, token);
+        var count = await participationRepository.GetParticipationCount(id, token);
 
-        return Ok(DetailedGameInfoModel.FromGame(context.Game, count)
-            .WithParticipation(context.Participation));
+        Participation? part = null;
+        if (await userManager.GetUserAsync(User) is { } user)
+            part = await participationRepository.GetParticipation(user.Id, id, token);
+
+        return Ok(gameInfo.WithParticipation(part, count));
+    }
+
+    /// <summary>
+    /// Get check info for joining a game
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    [RequireUser]
+    [HttpGet("{id:int}/Check")]
+    [ProducesResponseType(typeof(GameJoinCheckInfoModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetGameJoinCheckInfo(int id, CancellationToken token)
+    {
+        var game = await gameRepository.GetGameById(id, token);
+
+        if (game is null)
+            return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
+                StatusCodes.Status404NotFound));
+
+        var user = await userManager.GetUserAsync(User);
+
+        return Ok(await gameRepository.GetCheckInfo(game, user!, token));
     }
 
     /// <summary>
@@ -106,7 +166,8 @@ public class GameController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> JoinGame(int id, [FromBody] GameJoinModel model, CancellationToken token)
     {
-        Game? game = await gameRepository.GetGameById(id, token);
+        await using var transaction = await gameRepository.BeginTransactionAsync(token);
+        var game = await gameRepository.GetGameById(id, token);
 
         if (game is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
@@ -116,14 +177,16 @@ public class GameController(
             return BadRequest(
                 new RequestResponse(localizer[nameof(Resources.Program.Game_Ended)], ErrorCodes.GameEnded));
 
-        if (!string.IsNullOrEmpty(game.InviteCode) && game.InviteCode != model.InviteCode)
-            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_InvalidInvitationCode)]));
+        Division? div = null;
+        if (model.DivisionId is { } divId)
+        {
+            div = await divisionRepository.GetDivision(id, divId, token);
+            if (div is null)
+                return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_InvalidDivision)]));
+        }
 
-        if (!game.IsValidDivision(model.Division))
-            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_InvalidDivision)]));
-
-        UserInfo? user = await userManager.GetUserAsync(User);
-        Team? team = await teamRepository.GetTeamById(model.TeamId, token);
+        var user = await userManager.GetUserAsync(User);
+        var team = await teamRepository.GetTeamById(model.TeamId, token);
 
         if (team is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Team_NotFound)],
@@ -140,19 +203,31 @@ public class GameController(
         await participationRepository.RemoveUserParticipations(user!, game, token);
 
         // Try to get participation object
-        Participation? part = await participationRepository.GetParticipation(team, game, token);
+        var part = await participationRepository.GetParticipation(team, game, token);
+
+        // If not joined yet, check division permission
+        if (part is null && div is not null && !div.DefaultPermissions.HasFlag(GamePermission.JoinGame))
+            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_InvalidDivision)]));
+
+        // If the division is set, check if it matches
+        if (part is not null && part.DivisionId != model.DivisionId)
+            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_InvalidDivision)]));
+
+        // now the div is the target division, check invite code
+        var inviteCode = div is not null && !string.IsNullOrEmpty(div.InviteCode)
+            ? div.InviteCode
+            : string.IsNullOrEmpty(game.InviteCode)
+                ? null
+                : game.InviteCode;
+
+        if (inviteCode is not null && inviteCode != model.InviteCode)
+            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_InvalidInvitationCode)]));
 
         // If the team is not in the game, create a new participation object
         if (part is null)
         {
             // Create new participation object, do not update team-game-user triple tuple
-            part = new()
-            {
-                Game = game,
-                Team = team,
-                Division = model.Division,
-                Token = gameRepository.GetToken(game, team)
-            };
+            part = new() { Game = game, Team = team, Division = div, Token = gameRepository.GetToken(game, team) };
 
             participationRepository.Add(part);
         }
@@ -163,19 +238,18 @@ public class GameController(
         // Add current user to the team
         part.Members.Add(new(user!, game, team));
 
-        // Set division as the last request
-        part.Division = model.Division;
-
         if (part.Status == ParticipationStatus.Rejected)
             part.Status = ParticipationStatus.Pending;
 
         await participationRepository.SaveAsync(token);
 
-        if (game.AcceptWithoutReview)
-            await participationRepository.UpdateParticipation(part,
-                new ParticipationEditModel(status: ParticipationStatus.Accepted), token);
+        var divWithoutReview = div is null || !div.DefaultPermissions.HasFlag(GamePermission.RequireReview);
+        if (divWithoutReview && game.AcceptWithoutReview)
+            await participationRepository.UpdateParticipationStatus(part, ParticipationStatus.Accepted, token);
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Game_JoinSucceeded), team.Name, game.Title], user,
+        await transaction.CommitAsync(token);
+
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Game_JoinSucceeded), team.Name, game.Title], user,
             TaskStatus.Success);
 
         return Ok();
@@ -199,25 +273,24 @@ public class GameController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> LeaveGame(int id, CancellationToken token)
     {
-        Game? game = await gameRepository.GetGameById(id, token);
+        var game = await gameRepository.GetGameById(id, token);
 
         if (game is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
                 StatusCodes.Status404NotFound));
 
-        UserInfo? user = await userManager.GetUserAsync(User);
+        var user = await userManager.GetUserAsync(User);
 
-        Participation? part = await participationRepository.GetParticipation(user!, game, token);
+        var part = await participationRepository.GetParticipation(user!.Id, game.Id, token);
 
-        if (part is null || part.Members.All(u => u.UserId != user!.Id))
+        if (part is null || part.Members.All(u => u.UserId != user.Id))
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_CannotLeaveWithoutJoin)]));
 
         if (part.Status != ParticipationStatus.Pending && part.Status != ParticipationStatus.Rejected)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_CannotLeaveAfterApproval)]));
 
         // FIXME: After approval, new users can be added, but cannot exit?
-
-        part.Members.RemoveWhere(u => u.UserId == user!.Id);
+        part.Members.RemoveWhere(u => u.UserId == user.Id);
 
         if (part.Members.Count == 0)
             await participationRepository.RemoveParticipation(part, true, token);
@@ -242,7 +315,18 @@ public class GameController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Scoreboard([FromRoute] int id, CancellationToken token)
     {
-        Game? game = await gameRepository.GetGameById(id, token);
+        var scoreboard = await gameRepository.TryGetScoreboard(id, token);
+        string eTag;
+        if (scoreboard is not null)
+        {
+            eTag = GameETag(id, scoreboard.UpdateTimeUtc);
+            if (ContextHelper.IsNotModified(Request, Response, eTag, scoreboard.UpdateTimeUtc))
+                return StatusCode(StatusCodes.Status304NotModified);
+
+            return Ok(scoreboard);
+        }
+
+        var game = await gameRepository.GetGameById(id, token);
 
         if (game is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
@@ -251,7 +335,12 @@ public class GameController(
         if (DateTimeOffset.UtcNow < game.StartTimeUtc)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_NotStarted)]));
 
-        return Ok(await gameRepository.GetScoreboard(game, token));
+        scoreboard = await gameRepository.GetScoreboard(game, token);
+        var lastModified = scoreboard.UpdateTimeUtc;
+        eTag = GameETag(game.Id, lastModified);
+        ContextHelper.SetCacheHeaders(Response, eTag, lastModified);
+
+        return Ok(scoreboard);
     }
 
     /// <summary>
@@ -269,10 +358,10 @@ public class GameController(
     [HttpGet("{id:int}/Notices")]
     [ProducesResponseType(typeof(GameNotice[]), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Notices([FromRoute] int id, [FromQuery] int count = 100, [FromQuery] int skip = 0,
-        CancellationToken token = default)
+    public async Task<IActionResult> Notices([FromRoute] int id, [FromQuery][Range(0, 100)] int count = 100,
+        [FromQuery][Range(0, 300)] int skip = 0, CancellationToken token = default)
     {
-        Game? game = await gameRepository.GetGameById(id, token);
+        var game = await gameRepository.GetGameById(id, token);
 
         if (game is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
@@ -281,7 +370,11 @@ public class GameController(
         if (DateTimeOffset.UtcNow < game.StartTimeUtc)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_NotStarted)]));
 
-        return Ok(await noticeRepository.GetNotices(game.Id, count, skip, token));
+        (GameNotice[] data, DateTimeOffset lastModified) = await noticeRepository.GetLatestNotices(game.Id, token);
+        var eTag = $"\"{game.Id}-{lastModified.ToUnixTimeSeconds():X}-{skip}-{count}\"";
+        if (ContextHelper.IsNotModified(Request, Response, eTag, lastModified))
+            return StatusCode(StatusCodes.Status304NotModified);
+        return Ok(data.Skip(skip).Take(count));
     }
 
     /// <summary>
@@ -302,9 +395,9 @@ public class GameController(
     [ProducesResponseType(typeof(GameEvent[]), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Events([FromRoute] int id, [FromQuery] bool hideContainer = false,
-        [FromQuery] int count = 100, [FromQuery] int skip = 0, CancellationToken token = default)
+        [FromQuery][Range(0, 100)] int count = 100, [FromQuery] int skip = 0, CancellationToken token = default)
     {
-        Game? game = await gameRepository.GetGameById(id, token);
+        var game = await gameRepository.GetGameById(id, token);
 
         if (game is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
@@ -334,9 +427,9 @@ public class GameController(
     [ProducesResponseType(typeof(Submission[]), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Submissions([FromRoute] int id, [FromQuery] AnswerResult? type = null,
-        [FromQuery] int count = 100, [FromQuery] int skip = 0, CancellationToken token = default)
+        [FromQuery][Range(0, 100)] int count = 100, [FromQuery] int skip = 0, CancellationToken token = default)
     {
-        Game? game = await gameRepository.GetGameById(id, token);
+        var game = await gameRepository.GetGameById(id, token);
 
         if (game is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
@@ -364,7 +457,7 @@ public class GameController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CheatInfo([FromRoute] int id, CancellationToken token = default)
     {
-        Game? game = await gameRepository.GetGameById(id, token);
+        var game = await gameRepository.GetGameById(id, token);
 
         if (game is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
@@ -420,15 +513,14 @@ public class GameController(
         var path = StoragePath.Combine(PathHelper.Capture, $"{challengeId}");
 
         var entries = await storage.ListAsync(path, cancellationToken: token);
-        var participationIds = entries.Select(
-                e => int.TryParse(e.Name, out var id) ? id : -1)
+        var participationIds = entries.Select(e => int.TryParse(e.Name, out var id) ? id : -1)
             .Where(id => id > 0).ToArray();
 
         if (participationIds.Length == 0)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_CaptureNotFound)],
                 StatusCodes.Status404NotFound));
 
-        Participation[] participation = await participationRepository.GetParticipationsByIds(participationIds, token);
+        var participation = await participationRepository.GetParticipationsByIds(participationIds, token);
 
         var results = await Task.WhenAll(
             participation.Select(p => TeamTrafficModel.FromParticipationAsync(p, challengeId, storage, token))
@@ -613,14 +705,39 @@ public class GameController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChallengesWithTeamInfo([FromRoute] int id, CancellationToken token)
     {
-        ContextInfo context = await GetContextInfo(id, token: token);
+        var gameClosed = await gameRepository.IsGameClosed(id, token);
+        if (gameClosed)
+            return BadRequest(
+                new RequestResponse(localizer[nameof(Resources.Program.Game_Ended)], ErrorCodes.GameEnded));
+
+        var scoreboard = await gameRepository.TryGetScoreboard(id, token);
+        string eTag;
+        if (scoreboard is not null)
+        {
+            eTag = GameETag(id, scoreboard.UpdateTimeUtc);
+            if (ContextHelper.IsNotModified(Request, Response, eTag, scoreboard.UpdateTimeUtc, true))
+                return StatusCode(StatusCodes.Status304NotModified);
+        }
+
+        var context = await GetContextInfo(id, token: token);
 
         if (context.Result is not null)
             return context.Result;
 
-        ScoreboardModel scoreboard = await gameRepository.GetScoreboard(context.Game!, token);
+        scoreboard ??= await gameRepository.GetScoreboard(context.Game!, token);
+        var lastModified = scoreboard.UpdateTimeUtc;
+        eTag = GameETag(context.Game!.Id, lastModified);
+        ContextHelper.SetCacheHeaders(Response, eTag, lastModified, true);
 
-        ScoreboardItem boardItem = scoreboard.Items.TryGetValue(context.Participation!.TeamId, out ScoreboardItem? item)
+        var challenges = scoreboard.Challenges;
+        if (context.Participation!.DivisionId is { } divId &&
+            scoreboard.Divisions.TryGetValue(divId, out var division))
+        {
+            // filter out challenges is can be viewed by division permission
+            challenges = FilterChallengesByPermission(scoreboard.Challenges, division);
+        }
+
+        var boardItem = scoreboard.Items.TryGetValue(context.Participation!.TeamId, out var item)
             ? item
             : new()
             {
@@ -634,8 +751,8 @@ public class GameController(
         {
             ScoreboardItem = boardItem,
             TeamToken = context.Participation!.Token,
-            Challenges = scoreboard.Challenges,
-            ChallengeCount = scoreboard.ChallengeCount,
+            Challenges = challenges,
+            ChallengeCount = challenges.Count,
             WriteupRequired = context.Game!.WriteupRequired,
             WriteupDeadline = context.Game!.WriteupDeadline
         });
@@ -659,12 +776,12 @@ public class GameController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Participations([FromRoute] int id, CancellationToken token = default)
     {
-        ContextInfo context = await GetContextInfo(id, token: token);
+        var game = await gameRepository.GetGameById(id, token);
 
-        if (context.Game is null)
+        if (game is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)]));
 
-        return Ok((await participationRepository.GetParticipations(context.Game!, token))
+        return Ok((await participationRepository.GetParticipations(game, token))
             .Select(ParticipationInfoModel.FromParticipation));
     }
 
@@ -689,7 +806,7 @@ public class GameController(
     public async Task<IActionResult> ScoreboardSheet([FromRoute] int id, [FromServices] ExcelHelper excelHelper,
         CancellationToken token = default)
     {
-        Game? game = await gameRepository.GetGameById(id, token);
+        var game = await gameRepository.GetGameById(id, token);
 
         if (game is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)]));
@@ -699,8 +816,8 @@ public class GameController(
 
         try
         {
-            ScoreboardModel scoreboard = await gameRepository.GetScoreboardWithMembers(game, token);
-            MemoryStream stream = excelHelper.GetScoreboardExcel(scoreboard, game);
+            var scoreboard = await gameRepository.GetScoreboardWithMembers(game, token);
+            var stream = excelHelper.GetScoreboardExcel(scoreboard);
             stream.Seek(0, SeekOrigin.Begin);
 
             return File(stream,
@@ -709,9 +826,9 @@ public class GameController(
         }
         catch (Exception ex)
         {
-            logger.SystemLog(Program.StaticLocalizer[nameof(Resources.Program.Game_ScoreboardDownloadFailed)],
+            logger.SystemLog(StaticLocalizer[nameof(Resources.Program.Game_ScoreboardDownloadFailed)],
                 TaskStatus.Failed, LogLevel.Error);
-            logger.LogError(ex, ex.Message);
+            logger.LogErrorMessage(ex, ex.Message);
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_ScoreboardDownloadFailed)]));
         }
     }
@@ -737,7 +854,7 @@ public class GameController(
     public async Task<IActionResult> SubmissionSheet([FromRoute] int id, [FromServices] ExcelHelper excelHelper,
         CancellationToken token = default)
     {
-        Game? game = await gameRepository.GetGameById(id, token);
+        var game = await gameRepository.GetGameById(id, token);
 
         if (game is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)]));
@@ -745,9 +862,9 @@ public class GameController(
         if (DateTimeOffset.UtcNow < game.StartTimeUtc)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_NotStarted)]));
 
-        Submission[] submissions = await submissionRepository.GetSubmissions(game, count: 0, token: token);
+        var submissions = await submissionRepository.GetSubmissions(game, count: 0, token: token);
 
-        MemoryStream stream = excelHelper.GetSubmissionExcel(submissions);
+        var stream = excelHelper.GetSubmissionExcel(submissions);
         stream.Seek(0, SeekOrigin.Begin);
 
         return File(stream,
@@ -779,18 +896,30 @@ public class GameController(
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Challenge_NotFound)],
                 StatusCodes.Status404NotFound));
 
-        ContextInfo context = await GetContextInfo(id, token: token);
+        var context = await GetContextInfo(id, token: token);
 
         if (context.Result is not null)
             return context.Result;
 
-        GameInstance? instance = await gameInstanceRepository.GetInstance(context.Participation!, challengeId, token);
+        var permission = await divisionRepository.GetPermission(context.Participation?.DivisionId, challengeId, token);
+
+        if (!permission.HasFlag(GamePermission.ViewChallenge))
+            return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Challenge_NotFound)],
+                StatusCodes.Status404NotFound));
+
+        var instance = await gameInstanceRepository.GetInstance(context.Participation!, challengeId, token);
 
         if (instance is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_ChallengeNotFound)],
                 StatusCodes.Status404NotFound));
 
-        return Ok(ChallengeDetailModel.FromInstance(instance));
+        var scoreboard = await gameRepository.GetScoreboard(context.Game!, token);
+        ChallengeInfo? scoreboardChallenge =
+            scoreboard.ChallengeMap.TryGetValue(challengeId, out var challenge) ? challenge : null;
+
+        var attempts = await submissionRepository.CountSubmissions(context.Participation!.Id, challengeId, token);
+
+        return Ok(ChallengeDetailModel.FromInstance(instance, attempts, scoreboardChallenge));
     }
 
     /// <summary>
@@ -815,29 +944,89 @@ public class GameController(
     public async Task<IActionResult> Submit([FromRoute] int id, [FromRoute] int challengeId,
         [FromBody] FlagSubmitModel model, CancellationToken token)
     {
-        ContextInfo context = await GetContextInfo(id, challengeId, token: token);
+        var submitTime = DateTimeOffset.UtcNow;
+        var answer = configService.DecryptApiData(model.Flag);
+        if (string.IsNullOrWhiteSpace(answer))
+            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Model_FlagRequired)]));
+
+        answer = answer.Trim();
+        if (answer.Length > Limits.MaxFlagLength)
+            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Model_FlagTooLong)]));
+
+        var context = await GetContextInfo(id, token: token);
 
         if (context.Result is not null)
             return context.Result;
 
-        Submission submission = new()
+        const int maxRetries = 3;
+        for (int retry = 0; retry < maxRetries; retry++)
         {
-            Answer = model.Flag.Trim(),
-            Game = context.Game!,
-            User = context.User!,
-            GameChallenge = context.Challenge!,
-            Team = context.Participation!.Team,
-            Participation = context.Participation!,
-            Status = AnswerResult.FlagSubmitted,
-            SubmitTimeUtc = DateTimeOffset.UtcNow
-        };
+            await using var transaction = await gameInstanceRepository.BeginTransactionAsync(token);
 
-        submission = await submissionRepository.AddSubmission(submission, token);
+            var instance =
+                await gameInstanceRepository.GetInstanceForSubmission(context.Participation!, challengeId, token);
 
-        // send to flag checker service
-        await channelWriter.WriteAsync(submission, token);
+            if (instance is null)
+                return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_ChallengeNotFound)],
+                    StatusCodes.Status404NotFound));
 
-        return Ok(submission.Id);
+            if (instance.Challenge.DeadlineUtc is { } deadline && submitTime > deadline)
+                return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Challenge_DeadlinePassed)]));
+
+            var permission =
+                await divisionRepository.GetPermission(context.Participation?.DivisionId, challengeId, token);
+
+            if (!permission.HasFlag(GamePermission.ViewChallenge | GamePermission.SubmitFlags))
+                return BadRequest(
+                    new RequestResponse(localizer[nameof(Resources.Program.Challenge_SubmissionNoPermission)]));
+
+            var currentAttempts =
+                await submissionRepository.CountSubmissions(context.Participation!.Id, challengeId, token);
+
+            if (instance.Challenge.SubmissionLimit > 0 && currentAttempts >= instance.Challenge.SubmissionLimit)
+            {
+                return BadRequest(
+                    new RequestResponse(localizer[nameof(Resources.Program.Challenge_SubmissionLimitExceeded)]));
+            }
+
+            Submission submission = new()
+            {
+                Game = context.Game!,
+                User = context.User!,
+                GameChallenge = instance.Challenge,
+                Team = context.Participation!.Team,
+                Participation = context.Participation!,
+                Status = AnswerResult.FlagSubmitted,
+                SubmitTimeUtc = submitTime,
+                Answer = answer
+            };
+
+            try
+            {
+                submission = await submissionRepository.AddSubmission(submission, token);
+                await transaction.CommitAsync(token);
+
+                await channelWriter.WriteAsync(submission, token);
+                return Ok(submission.Id);
+            }
+            catch (DbUpdateConcurrencyException) when (retry < maxRetries - 1)
+            {
+                await transaction.RollbackAsync(token);
+                await Task.Delay((retry + 1) * 100, token);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(token);
+                logger.LogErrorMessage(ex, ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new RequestResponse(localizer[nameof(Resources.Program.Error_InternalServerError)],
+                        StatusCodes.Status500InternalServerError));
+            }
+        }
+
+        return StatusCode(StatusCodes.Status409Conflict,
+            new RequestResponse(localizer[nameof(Resources.Program.Error_InternalServerError)],
+                StatusCodes.Status409Conflict));
     }
 
     /// <summary>
@@ -865,7 +1054,7 @@ public class GameController(
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_SubmissionNotFound)],
                 StatusCodes.Status404NotFound));
 
-        Submission? submission =
+        var submission =
             await submissionRepository.GetSubmission(id, challengeId, Guid.Parse(claimId), submitId, token);
 
         if (submission is null)
@@ -897,7 +1086,7 @@ public class GameController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetWriteup([FromRoute] int id, CancellationToken token)
     {
-        ContextInfo context = await GetContextInfo(id, denyAfterEnded: false, token: token);
+        var context = await GetContextInfo(id, denyAfterEnded: false, token: token);
 
         if (context.Result is not null)
             return context.Result;
@@ -935,23 +1124,23 @@ public class GameController(
         if (file.ContentType != "application/pdf" || Path.GetExtension(file.FileName) != ".pdf")
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.File_PdfOnly)]));
 
-        ContextInfo context = await GetContextInfo(id, denyAfterEnded: false, token: token);
+        var context = await GetContextInfo(id, denyAfterEnded: false, token: token);
 
         if (context.Result is not null)
             return context.Result;
 
-        Game game = context.Game!;
+        var game = context.Game!;
 
         if (!game.WriteupRequired)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_WriteupNotNeeded)]));
 
-        Participation part = context.Participation!;
-        Team team = part.Team;
+        var part = context.Participation!;
+        var team = part.Team;
 
         if (DateTimeOffset.UtcNow > game.WriteupDeadline)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_DeadlineExpired)]));
 
-        LocalFile? wp = context.Participation!.Writeup;
+        var wp = context.Participation!.Writeup;
 
         if (wp is not null)
             await blobService.DeleteBlob(wp, token);
@@ -961,7 +1150,7 @@ public class GameController(
 
         await participationRepository.SaveAsync(token);
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Game_WriteupSubmitted), team.Name, game.Title],
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Game_WriteupSubmitted), team.Name, game.Title],
             context.User!,
             TaskStatus.Success);
 
@@ -990,12 +1179,18 @@ public class GameController(
     public async Task<IActionResult> CreateContainer([FromRoute] int id, [FromRoute] int challengeId,
         CancellationToken token)
     {
-        ContextInfo context = await GetContextInfo(id, token: token);
+        var context = await GetContextInfo(id, token: token);
 
         if (context.Result is not null)
             return context.Result;
 
-        GameInstance? instance = await gameInstanceRepository.GetInstance(context.Participation!, challengeId, token);
+        var permission = await divisionRepository.GetPermission(context.Participation?.DivisionId, challengeId, token);
+
+        if (!permission.HasFlag(GamePermission.ViewChallenge))
+            return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Challenge_NotFound)],
+                StatusCodes.Status404NotFound));
+
+        var instance = await gameInstanceRepository.GetInstance(context.Participation!, challengeId, token);
 
         if (instance is null || !instance.Challenge.IsEnabled)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Challenge_NotFound)],
@@ -1006,9 +1201,8 @@ public class GameController(
                 new RequestResponse(localizer[nameof(Resources.Program.Game_ContainerCreationNotAllowed)]));
 
         if (instance.IsContainerOperationTooFrequent)
-            return new JsonResult(new RequestResponse(localizer[nameof(Resources.Program.Game_OperationTooFrequent)],
-                StatusCodes.Status429TooManyRequests))
-            { StatusCode = StatusCodes.Status429TooManyRequests };
+            return RequestResponse.Result(localizer[nameof(Resources.Program.Game_OperationTooFrequent)],
+                StatusCodes.Status429TooManyRequests);
 
         if (instance.Container is not null)
         {
@@ -1053,12 +1247,12 @@ public class GameController(
     public async Task<IActionResult> ExtendContainerLifetime([FromRoute] int id, [FromRoute] int challengeId,
         CancellationToken token)
     {
-        ContextInfo context = await GetContextInfo(id, token: token);
+        var context = await GetContextInfo(id, token: token);
 
         if (context.Result is not null)
             return context.Result;
 
-        GameInstance? instance = await gameInstanceRepository.GetInstance(context.Participation!, challengeId, token);
+        var instance = await gameInstanceRepository.GetInstance(context.Participation!, challengeId, token);
 
         if (instance is null || !instance.Challenge.IsEnabled)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Challenge_NotFound)],
@@ -1104,12 +1298,12 @@ public class GameController(
     public async Task<IActionResult> DeleteContainer([FromRoute] int id, [FromRoute] int challengeId,
         CancellationToken token)
     {
-        ContextInfo context = await GetContextInfo(id, token: token);
+        var context = await GetContextInfo(id, token: token);
 
         if (context.Result is not null)
             return context.Result;
 
-        GameInstance? instance = await gameInstanceRepository.GetInstance(context.Participation!, challengeId, token);
+        var instance = await gameInstanceRepository.GetInstance(context.Participation!, challengeId, token);
 
         if (instance is null || !instance.Challenge.IsEnabled)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Challenge_NotFound)],
@@ -1123,9 +1317,8 @@ public class GameController(
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_ContainerNotCreated)]));
 
         if (instance.IsContainerOperationTooFrequent)
-            return new JsonResult(new RequestResponse(localizer[nameof(Resources.Program.Game_OperationTooFrequent)],
-                StatusCodes.Status429TooManyRequests))
-            { StatusCode = StatusCodes.Status429TooManyRequests };
+            return RequestResponse.Result(localizer[nameof(Resources.Program.Game_OperationTooFrequent)],
+                StatusCodes.Status429TooManyRequests);
 
         var destroyId = instance.Container.ContainerId;
 
@@ -1145,7 +1338,7 @@ public class GameController(
             }, token);
 
         logger.Log(
-            Program.StaticLocalizer[nameof(Resources.Program.Game_ContainerDeleted), context.Participation!.Team.Name,
+            StaticLocalizer[nameof(Resources.Program.Game_ContainerDeleted), context.Participation!.Team.Name,
                 instance.Challenge.Title,
                 destroyId],
             context.User, TaskStatus.Success);
@@ -1153,8 +1346,7 @@ public class GameController(
         return Ok();
     }
 
-    async Task<ContextInfo> GetContextInfo(int id, int challengeId = 0, bool withFlag = false,
-        bool denyAfterEnded = true, CancellationToken token = default)
+    async Task<ContextInfo> GetContextInfo(int id, bool denyAfterEnded = true, CancellationToken token = default)
     {
         ContextInfo res = new()
         {
@@ -1166,7 +1358,7 @@ public class GameController(
             return res.WithResult(NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
                 StatusCodes.Status404NotFound)));
 
-        Participation? part = await participationRepository.GetParticipation(res.User!, res.Game, token);
+        var part = await participationRepository.GetParticipation(res.User!.Id, res.Game.Id, token);
 
         if (part is null)
             return res.WithResult(
@@ -1187,31 +1379,44 @@ public class GameController(
             return res.WithResult(
                 BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_Ended)], ErrorCodes.GameEnded)));
 
-        if (challengeId <= 0)
-            return res;
+        return res;
+    }
 
-        GameChallenge? challenge = await challengeRepository.GetChallenge(id, challengeId, token);
+    static string GameETag(int gameId, DateTimeOffset lastModified) =>
+        $"\"{gameId}-{lastModified.ToUnixTimeSeconds():X}\"";
 
-        if (challenge is null)
-            return res.WithResult(NotFound(new RequestResponse(
-                localizer[nameof(Resources.Program.Challenge_NotFound)],
-                StatusCodes.Status404NotFound)));
+    static Dictionary<ChallengeCategory, IEnumerable<ChallengeInfo>> FilterChallengesByPermission(
+        Dictionary<ChallengeCategory, IEnumerable<ChallengeInfo>> challenges,
+        DivisionItem division)
+    {
+        var res = new Dictionary<ChallengeCategory, IEnumerable<ChallengeInfo>>();
 
-        if (withFlag)
-            await challengeRepository.LoadFlags(challenge, token);
+        foreach ((ChallengeCategory cat, IEnumerable<ChallengeInfo> chs) in challenges)
+        {
+            var infos = chs.Where(chal =>
+                division.ChallengeConfigs.TryGetValue(chal.Id, out var config)
+                    ? config.Permissions.HasFlag(GamePermission.ViewChallenge)
+                    : division.DefaultPermissions.HasFlag(GamePermission.ViewChallenge)
+            ).ToArray();
 
-        res.Challenge = challenge;
+            if (infos.Length > 0)
+                res[cat] = infos;
+        }
 
         return res;
     }
 
     class ContextInfo
     {
-        public GameChallenge? Challenge;
         public Game? Game;
         public Participation? Participation;
-        public IActionResult? Result;
         public UserInfo? User;
+
+        /// <summary>
+        /// The result to be returned.
+        /// If this is not null, the action should return this result directly.
+        /// </summary>
+        public IActionResult? Result;
 
         public ContextInfo WithResult(IActionResult res)
         {

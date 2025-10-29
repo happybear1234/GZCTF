@@ -17,7 +17,7 @@ import { useLocalStorage } from '@mantine/hooks'
 import { mdiFileUploadOutline, mdiFlagOutline, mdiPuzzle } from '@mdi/js'
 import { Icon } from '@mdi/react'
 import dayjs from 'dayjs'
-import React, { FC, useEffect, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useParams } from 'react-router'
 import { ChallengeCard } from '@Components/ChallengeCard'
@@ -144,11 +144,12 @@ export const ChallengePanel: FC = () => {
 
   return (
     <>
-      <Stack miw="10rem">
+      <Stack miw="10.5rem">
         {game?.writeupRequired && (
           <>
             <Button
               px="xs"
+              justify="space-between"
               leftSection={<Icon path={mdiFileUploadOutline} size={1} />}
               onClick={() => setWriteupSubmitOpened(true)}
             >
@@ -158,12 +159,12 @@ export const ChallengePanel: FC = () => {
           </>
         )}
         <Switch
-          w="10rem"
+          w="10.5rem"
           checked={hideSolved}
           onChange={(e) => setHideSolved(e.target.checked)}
           classNames={{ body: classes.switch }}
           label={
-            <Text fz="md" fw="bold">
+            <Text fz="md" fw="bold" ta="right">
               {t('game.button.hide_solved')}
             </Text>
           }
@@ -174,6 +175,7 @@ export const ChallengePanel: FC = () => {
           value={activeTab}
           onChange={(value) => setActiveTab(value as ChallengeCategory)}
           classNames={{
+            root: classes.tabRoot,
             list: classes.tabList,
             tabLabel: classes.tabLabel,
             tab: classes.tab,
@@ -215,8 +217,8 @@ export const ChallengePanel: FC = () => {
         scrollbarSize={4}
         classNames={{ root: classes.scrollArea }}
       >
-        {/* if rank is 0, means scoreboard not ready yet */}
-        {!teamInfo?.rank?.rank ? (
+        {/* if rank is 0, and have no division, means scoreboard not ready yet */}
+        {!teamInfo.rank?.divisionId && !teamInfo?.rank?.rank ? (
           <Center h="calc(100vh - 10rem)">
             <Stack gap={0}>
               <Title order={2}>{t('game.content.scoreboard_not_ready.title')}</Title>
@@ -275,6 +277,7 @@ export const ChallengePanel: FC = () => {
       {challenge?.id && (
         <GameChallengeModal
           gameId={numId}
+          gameTitle={game?.title ?? ''}
           opened={detailOpened}
           withCloseButton={false}
           onClose={() => {

@@ -1,7 +1,7 @@
-/*
- * This file is protected and may not be modified without permission.
- * See LICENSE_ADDENDUM.txt for details.
- */
+// SPDX-License-Identifier: LicenseRef-GZCTF-Restricted
+// Copyright (C) 2022-2025 GZTimeWalker
+// Restricted Component - NOT under AGPLv3.
+// See licenses/LicenseRef-GZCTF-Restricted.txt
 
 using System.Net;
 using GZCTF.Models.Internal;
@@ -25,7 +25,7 @@ public class KubernetesManager : IContainerManager
         _meta = provider.GetMetadata();
         _client = provider.GetProvider();
 
-        logger.SystemLog(Program.StaticLocalizer[nameof(Resources.Program.ContainerManager_K8sMode)],
+        logger.SystemLog(StaticLocalizer[nameof(Resources.Program.ContainerManager_K8sMode)],
             TaskStatus.Success,
             LogLevel.Debug);
     }
@@ -38,19 +38,38 @@ public class KubernetesManager : IContainerManager
         if (string.IsNullOrWhiteSpace(imageName))
         {
             _logger.SystemLog(
-                Program.StaticLocalizer[nameof(Resources.Program.ContainerManager_UnresolvedImageName), config.Image],
+                StaticLocalizer[nameof(Resources.Program.ContainerManager_UnresolvedImageName), config.Image],
                 TaskStatus.Failed, LogLevel.Warning);
             return null;
         }
 
-        var authSecretName = _meta.AuthSecretName;
+        var authSecretName = _meta.AuthSecretNames.GetForImage(config.Image);
         KubernetesConfig options = _meta.Config;
 
         var chalImage = imageName.ToValidRFC1123String("chal");
 
         var name = $"{chalImage}-{Guid.NewGuid().ToString("N")[..16]}";
 
-        var pod = new V1Pod("v1", "Pod")
+        // GZCTF_FLAG is Per-team dynamic flag issued & audited by the platform.
+        //
+        // Compliance & Abuse Notice:
+        //
+        // These env vars are integral to anti-abuse, audit trails and license compliance under
+        // the Restricted License (LicenseRef-GZCTF-Restricted). Unauthorized removal, renaming
+        // or semantic alteration can indicate an attempt to bypass license terms or weaken
+        // challenge isolation guarantees. Downstream extensions MUST preserve their semantics.
+        // Modification without a valid authorization may be treated as misuse.
+        //
+        // References: NOTICE, LICENSE_ADDENDUM.txt, licenses/LicenseRef-GZCTF-Restricted.txt
+        IList<V1EnvVar> envs = config.Flag is null
+            ? [new V1EnvVar { Name = "GZCTF_TEAM_ID", Value = config.TeamId }]
+            :
+            [
+                new V1EnvVar { Name = "GZCTF_FLAG", Value = config.Flag },
+                new V1EnvVar { Name = "GZCTF_TEAM_ID", Value = config.TeamId }
+            ];
+
+        var pod = new V1Pod
         {
             Metadata = new V1ObjectMeta
             {
@@ -81,18 +100,8 @@ public class KubernetesManager : IContainerManager
                         Name = name,
                         Image = config.Image,
                         ImagePullPolicy = "Always",
-                        // The GZCTF identifier is protected by the License.
-                        // DO NOT REMOVE OR MODIFY THE FOLLOWING LINE.
-                        // Please see LICENSE_ADDENDUM.txt for details.
-                        Env =
-                            config.Flag is null
-                                ? [new V1EnvVar("GZCTF_TEAM_ID", config.TeamId)]
-                                :
-                                [
-                                    new V1EnvVar("GZCTF_FLAG", config.Flag),
-                                    new V1EnvVar("GZCTF_TEAM_ID", config.TeamId)
-                                ],
-                        Ports = [new V1ContainerPort(config.ExposedPort)],
+                        Env = envs,
+                        Ports = [new V1ContainerPort { ContainerPort = config.ExposedPort }],
                         Resources = new V1ResourceRequirements
                         {
                             Limits = new Dictionary<string, ResourceQuantity>
@@ -124,23 +133,25 @@ public class KubernetesManager : IContainerManager
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "{msg}",
-                Program.StaticLocalizer[nameof(Resources.Program.ContainerManager_ContainerCreationFailed), name]);
+            _logger.LogErrorMessage(e,
+                StaticLocalizer[nameof(Resources.Program.ContainerManager_ContainerCreationFailed), name]);
             return null;
         }
 
         if (pod is null)
         {
             _logger.SystemLog(
-                Program.StaticLocalizer[nameof(Resources.Program.ContainerManager_ContainerInstanceCreationFailed),
+                StaticLocalizer[nameof(Resources.Program.ContainerManager_ContainerInstanceCreationFailed),
                     config.Image.Split("/").LastOrDefault() ?? ""], TaskStatus.Failed,
                 LogLevel.Warning);
             return null;
         }
 
         // Service is needed for port mapping
-        var service = new V1Service("v1", "Service")
+        var service = new V1Service
         {
+            ApiVersion = "v1",
+            Kind = "Service",
             Metadata = new V1ObjectMeta
             {
                 Name = name,
@@ -150,7 +161,7 @@ public class KubernetesManager : IContainerManager
             Spec = new V1ServiceSpec
             {
                 Type = _meta.ExposePort ? "NodePort" : "ClusterIP",
-                Ports = [new V1ServicePort(config.ExposedPort, targetPort: config.ExposedPort)],
+                Ports = [new V1ServicePort { Port = config.ExposedPort, TargetPort = config.ExposedPort }],
                 Selector = new Dictionary<string, string> { ["gzctf.gzti.me/ResourceId"] = name }
             }
         };
@@ -187,8 +198,8 @@ public class KubernetesManager : IContainerManager
                 // ignored
             }
 
-            _logger.LogError(e, "{msg}",
-                Program.StaticLocalizer[nameof(Resources.Program.ContainerManager_ServiceCreationFailed), name]);
+            _logger.LogErrorMessage(e,
+                StaticLocalizer[nameof(Resources.Program.ContainerManager_ServiceCreationFailed), name]);
             return null;
         }
 
@@ -233,8 +244,8 @@ public class KubernetesManager : IContainerManager
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "{msg}",
-                Program.StaticLocalizer[nameof(Resources.Program.ContainerManager_ContainerDeletionFailed),
+            _logger.LogErrorMessage(e,
+                StaticLocalizer[nameof(Resources.Program.ContainerManager_ContainerDeletionFailed),
                     container.ContainerId]);
             return;
         }

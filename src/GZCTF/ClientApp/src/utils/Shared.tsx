@@ -11,6 +11,7 @@ import {
   MantineColorsTuple,
   OverlayProps,
 } from '@mantine/core'
+import { showNotification } from '@mantine/notifications'
 import {
   mdiBomb,
   mdiBullhornOutline,
@@ -446,12 +447,14 @@ export const TaskStatusColorMap = new Map<TaskStatus | null, string>([
   [TaskStatus.Exit, 'gray'],
   [TaskStatus.NotFound, 'violet'],
   [TaskStatus.Duplicate, 'lime'],
+  [TaskStatus.Degraded, 'orange'],
+  [TaskStatus.Unhealthy, 'alert'],
   [null, 'gray'],
 ])
 
-export const getProxyUrl = (guid: string, test: boolean = false) => {
+export const getProxyUrl = (guid: string, isPreview: boolean = false) => {
   const protocol = window.location.protocol.replace('http', 'ws')
-  const api = test ? 'api/proxy/noinst' : 'api/proxy'
+  const api = isPreview ? 'api/proxy/noinst' : 'api/proxy'
   return `${protocol}//${window.location.host}/${api}/${guid}`
 }
 
@@ -474,6 +477,16 @@ export const DEFAULT_LOADING_OVERLAY: OverlayProps = {
 
 export const IMAGE_MIME_TYPES = ['image/png', 'image/gif', 'image/jpeg', 'image/webp', 'image/avif', 'image/heic']
 
+/**
+ * Client Error class to encapsulate client-side errors
+ */
+export class ClientError {
+  constructor(
+    public title: string,
+    public message: string
+  ) {}
+}
+
 /** 系统错误信息 */
 export const enum ErrorCodes {
   /**
@@ -485,4 +498,56 @@ export const enum ErrorCodes {
    * 比赛已结束
    */
   GameEnded = 10002,
+}
+
+const showErrorNotification = (title: string, message: string) => {
+  showNotification({
+    color: 'red',
+    title,
+    message,
+    icon: <Icon path={mdiClose} size={1} />,
+  })
+}
+
+export const randomInviteCode = () => {
+  const pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  return Array.from({ length: 12 }, () => pool[Math.floor(Math.random() * pool.length)]).join('')
+}
+
+export const tryGetErrorMsg = (err: any, t: (key: string) => string): string => {
+  const tryGetErrorString = (err: any): string | null => {
+    return typeof err === 'string' ? err : null
+  }
+
+  return (
+    tryGetErrorString(err) ||
+    tryGetErrorString(err.title) ||
+    tryGetErrorString(err.response?.data?.title) ||
+    tryGetErrorString(err.message) ||
+    tryGetErrorString(err.cause) ||
+    t('common.error.unknown')
+  )
+}
+
+export const tryGetClientError = (err: any, t: (key: string) => string): ClientError => {
+  return err instanceof ClientError ? err : new ClientError(t('common.error.encountered'), tryGetErrorMsg(err, t))
+}
+
+export const showErrorMsg = (err: any, t: (key: string) => string) => {
+  if (err?.response?.status === 429) {
+    showErrorNotification(t('common.error.try_later'), tryGetErrorMsg(err, t))
+    return
+  }
+
+  console.warn(err)
+  const clientError = tryGetClientError(err, t)
+  showErrorNotification(clientError.title, clientError.message)
+}
+
+export const getInputNumber = (value: string | number, float?: boolean): number => {
+  if (typeof value === 'number') {
+    return value
+  }
+
+  return float ? parseFloat(value) : parseInt(value)
 }

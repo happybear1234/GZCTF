@@ -11,7 +11,11 @@
     "instance": {
       "create": "Erstellen",
       "destroy": "Zerstören",
-      "extend": "Erweitern"
+      "extend": "Erweitern",
+      "show": {
+        "original": "Wechseln zu ursprünglicher Eingabe",
+        "proxied": "Wechseln zu lokaler Proxy-Eingabe"
+      }
     },
     "submit_flag": "Flag einreichen"
   },
@@ -32,6 +36,17 @@
   },
   "content": {
     "already_solved": "Diese Herausforderung wurde gelöst",
+    "attempts": {
+      "count": "Du hast bereits {{count}} Mal versucht!",
+      "exhausted": "Ups, alle Versuche aufgebraucht!",
+      "placeholder": "Du hast das Limit erreicht!",
+      "remaining": "{{remaining}} Versuche übrig, weitermachen!"
+    },
+    "deadline": {
+      "expired": "Frist abgelaufen am {{deadline}}, Einsendungen deaktiviert",
+      "label": "Abgabefrist",
+      "remaining": "Verbleibende Zeit"
+    },
     "flag_placeholders": [
       "Sein oder nicht sein, Flagge ist die Frage",
       "Nicht alles, was glänzt, ist eine Flagge",

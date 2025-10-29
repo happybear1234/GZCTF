@@ -9,6 +9,7 @@
 ![version](https://img.shields.io/github/v/release/GZTimeWalker/GZCTF?include_prereleases&label=version)
 ![license](https://img.shields.io/github/license/GZTimeWalker/GZCTF?color=FF5531)
 [![Crowdin](https://badges.crowdin.net/gzctf/localized.svg)](https://crowdin.com/project/gzctf)
+[![codecov](https://codecov.io/gh/GZTimeWalker/GZCTF/branch/develop/graph/badge.svg)](https://codecov.io/gh/GZTimeWalker/GZCTF)
 
 [![Telegram Group](https://img.shields.io/endpoint?color=blue&url=https%3A%2F%2Ftg.sumanjay.workers.dev%2Fgzctf)](https://telegram.dog/gzctf)
 [![QQ Group](https://img.shields.io/badge/QQ%20Group-903244818-blue)](https://jq.qq.com/?_wv=1027&k=muSqhF9x)
@@ -60,7 +61,7 @@ GZ::CTF は ASP.NET Core を基づいたオープンソース CTF プラット�
 - **組織ごとにグループされたチーム**のスコアタイムライン、組織順位表
 - **Docker または K8S** に基づいた動的なコンテナの分散、管理、および複数のポート マッピング方法のサポート
 - SignalR に基づいた**リアルタイム**ゲーム通知、ゲームイベントとフラッグ送信とログの監視
-- SMTP メール検証機能、Google ReCaptchav3 による悪意のある登録防止
+- SMTP メール検証機能、Cloudflare Turnstile による悪意のある登録防止
 - ユーザーのブロックおよび権限管理
 - オプションのチームレビュー、招待コード、登録メール制限
 - プラットフォーム内での記事の収集、レビューとバッチダウンロード
@@ -103,6 +104,7 @@ GZ::CTF は ASP.NET Core を基づいたオープンソース CTF プラット�
 ## Demo 🗿
 
 ![index.webp](assets/images/index.webp)
+![game.list.webp](assets/images/game.list.webp)
 ![game.challenges.webp](assets/images/game.challenges.webp)
 ![game.scoreboard.webp](assets/images/game.scoreboard.webp)
 ![admin.settings.webp](assets/images/admin.settings.webp)
@@ -167,6 +169,31 @@ _順番は順位との関係はありません。追加ための PR は大歓迎
 ## 特別感謝 ❤️‍🔥
 
 THUCTF 2022 の主催者である NanoApe によるスポンサーシップと、Alibaba Cloud パブリックネットワークでのストレステストのおかげで、数千の同時実行と 3 分間の 134 万のリクエストのプレッシャーの下で GZCTF 単一マシンインスタンス (16c90g) のサービスの安定性を検証することができました。ここで心から感謝申し上げます。
+
+## ライセンス 📄
+
+GZCTF はデュアルライセンスです：
+
+1.  **コアソースコード**：**GNU Affero General Public License v3.0 (AGPLv3)** の下でライセンスされています。これはプロジェクトの主要部分をカバーし、使用、変更、配布に関する広範な自由を許諾します。詳細は `LICENSE.txt` を参照してください。
+
+2.  **制限付きコンポーネント**：カスタムの **GZCTF 制限付きライセンス** (`LicenseRef-GZCTF-Restricted`) の下でライセンスされています。
+    - **使用と配布の許可**：すべての著作権表示とライセンステキストが保持されている限り、コンポーネントを現状のまま（未変更で）自由に使用および再配布できます。
+    - **変更および削除の禁止**：作者からの明示的な書面による許可なく、これらのコンポーネントを**変更、削除、派生物の作成、リバースエンジニアリング**することはできません。
+    - **ファイルリスト**：制限付きコンポーネントの完全なリストは `PROPRIETARY_COMPONENTS.md` ファイルで定義されています。
+    - **ライセンス全文**：詳細な条件については `license/LicenseRef-GZCTF-Restricted.txt` を参照してください。
+
+GZCTF の **変更されたバージョン** を公開サービスとして展開する場合、以下の要件を満たす必要があります：
+
+- ウェブサイトのフッターなど、目立つ場所に元の著作権および帰属情報を保持する。
+- 使用している GZCTF のバージョンとそのライセンスを明記する。
+- 元のリポジトリおよび元のライセンステキストへのリンクを提供する。
+
+### 商標とブランド
+
+- "GZCTF" / "GZ::CTF" の名称、ロゴ、および関連ブランド資産は作者の商標です。
+- 使用は `TRADEMARKS.md` によって規定されています。記述的な参照（例：「Forked from GZCTF」）は許可されていますが、公式の支持を暗示してはなりません。
+
+統合された著作権および商標に関する声明については、`NOTICE` ファイルも参照してください。
 
 ## Stars ✨
 

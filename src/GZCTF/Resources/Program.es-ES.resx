@@ -156,13 +156,13 @@
     <value>Nombre de usuario o contraseña incorrectos</value>
   </data>
   <data name="Account_InvalidEmail" xml:space="preserve">
-    <value>Dirección de correo electrónico no válida</value>
+    <value>Dirección de correo electrónico inválida</value>
   </data>
   <data name="Account_PasswordChanged" xml:space="preserve">
-    <value>Usuario actualizó su contraseña</value>
+    <value>Contraseña actualizada por el usuario</value>
   </data>
   <data name="Account_PasswordReset" xml:space="preserve">
-    <value>Restablecimiento de contraseña de usuario exitoso</value>
+    <value>Contraseña de usuario restablecida con éxito</value>
   </data>
   <data name="Account_RegisterNotEnabled" xml:space="preserve">
     <value>El registro ha sido deshabilitado</value>
@@ -401,6 +401,12 @@
   </data>
   <data name="CronJob_Stopped" xml:space="preserve">
     <value>El trabajo cron se ha detenido</value>
+  </data>
+  <data name="CronJob_ExecuteFailed" xml:space="preserve">
+    <value>Falló al ejecutar el cronjob {0}: {1}</value>
+  </data>
+  <data name="CronJob_LaunchedWatchDog" xml:space="preserve">
+    <value>Otra instancia está reteniendo los cronjobs, ejecutemos el watchdog.</value>
   </data>
   <data name="Database_ConnectionFailed" xml:space="preserve">
     <value>No se pudo conectar a la base de datos ({0}), por favor verifique la cadena de conexión de la base de datos</value>
@@ -927,6 +933,9 @@
   <data name="Challenge_UseAssetsApiForDynamic" xml:space="preserve">
     <value>Use la API de activos para subir adjuntos</value>
   </data>
+  <data name="Challenge_SubmissionLimitExceeded" xml:space="preserve">
+    <value>Límite de envíos alcanzado</value>
+  </data>
   <data name="Container_AddressResolveFailed" xml:space="preserve">
     <value>Fallo en el análisis de la dirección del contenedor</value>
   </data>
@@ -1002,8 +1011,8 @@
   <data name="Team_MemberRemoved" xml:space="preserve">
     <value>Expulsar {0} del Equipo {1}</value>
   </data>
-  <data name="Team_MultipleCreationNotAllowed" xml:space="preserve">
-    <value>No se permite crear más de un equipo</value>
+  <data name="Team_ExceededCreationLimit" xml:space="preserve">
+    <value>Excedido el límite de equipos propios</value>
   </data>
   <data name="Team_NameEmpty" xml:space="preserve">
     <value>El nombre del equipo no puede estar vacío</value>
@@ -1021,7 +1030,7 @@
     <value>El usuario transferido no existe</value>
   </data>
   <data name="Team_NewCaptainTeamTooMany" xml:space="preserve">
-    <value>Demasiados equipos transferidos</value>
+    <value>El nuevo capitán tiene demasiados equipos</value>
   </data>
   <data name="Team_UserJoined" xml:space="preserve">
     <value>Unirse al Equipo {0}</value>
@@ -1061,5 +1070,14 @@
   </data>
   <data name="Init_StorageInitFailed" xml:space="preserve">
     <value>Error al inicializar el proveedor de almacenamiento: {0}</value>
+  </data>
+  <data name="Division_NotFound" xml:space="preserve">
+    <value>División no encontrada</value>
+  </data>
+  <data name="Challenge_SubmissionNoPermission" xml:space="preserve">
+    <value>Sin permiso para enviar flags</value>
+  </data>
+  <data name="Challenge_DeadlinePassed" xml:space="preserve">
+    <value>La fecha límite de este desafío ha pasado</value>
   </data>
 </root>

@@ -9,7 +9,6 @@ import {
   Text,
   TextInput,
   Title,
-  useMantineColorScheme,
   useMantineTheme,
 } from '@mantine/core'
 import { showNotification } from '@mantine/notifications'
@@ -23,7 +22,7 @@ import { TeamCreateModal } from '@Components/TeamCreateModal'
 import { TeamEditModal } from '@Components/TeamEditModal'
 import { WithNavBar } from '@Components/WithNavbar'
 import { WithRole } from '@Components/WithRole'
-import { showErrorNotification } from '@Utils/ApiHelper'
+import { showErrorMsg } from '@Utils/Shared'
 import { useIsMobile } from '@Utils/ThemeOverride'
 import { usePageTitle } from '@Hooks/usePageTitle'
 import { useTeams, useUser } from '@Hooks/useUser'
@@ -43,7 +42,8 @@ const Teams: FC = () => {
 
   const [editTeam, setEditTeam] = useState<TeamInfoModel | null>(null)
 
-  const ownTeam = teams?.some((t) => t.members?.some((m) => m?.captain && m.id === user?.userId))
+  const teamsOwned = teams?.filter((t) => t.members?.some((m) => m?.captain && m.id === user?.userId))
+  const disallowCreate = (teamsOwned?.length ?? 0) >= 3
 
   const isMobile = useIsMobile()
 
@@ -79,27 +79,25 @@ const Teams: FC = () => {
       })
       mutateTeams()
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setJoinTeamCode('')
       setJoinOpened(false)
     }
   }
 
-  const { colorScheme } = useMantineColorScheme()
-
   const btns = (
     <>
       <Button
         leftSection={<Icon path={mdiHumanGreetingVariant} size={1} />}
-        variant={colorScheme === 'dark' ? 'outline' : 'filled'}
+        variant="outline"
         onClick={() => setJoinOpened(true)}
       >
         {t('team.button.join')}
       </Button>
       <Button
         leftSection={<Icon path={mdiAccountMultiplePlus} size={1} />}
-        variant={colorScheme === 'dark' ? 'outline' : 'filled'}
+        variant="filled"
         onClick={() => setCreateOpened(true)}
       >
         {t('team.button.create')}
@@ -122,27 +120,9 @@ const Teams: FC = () => {
             )}
           </Group>
           {teams && !teamsError && user && !userError ? (
-            <>
-              <Title
-                order={2}
-                style={{
-                  color: theme.colors[theme.primaryColor][colorScheme === 'dark' ? 2 : 6],
-                  fontSize: '6rem',
-                  fontWeight: 'bold',
-                  opacity: 0.15,
-                  height: '4.5rem',
-                  paddingLeft: '1rem',
-                  userSelect: 'none',
-                  marginTop: '-1.5rem',
-                }}
-              >
-                TEAMS
-              </Title>
-              <SimpleGrid
-                cols={{ base: 1, lg: 2, w18: 3, w24: 4, w30: 5, w36: 6, w42: 7, w48: 8 }}
-                spacing={{ base: 'sm', lg: 'md' }}
-              >
-                {teams.map((t, i) => (
+            teams.length > 0 ? (
+              <SimpleGrid cols={isMobile ? 1 : 2} spacing="xl" p={isMobile ? 'sm' : '2rem'} w="100%">
+                {(teams || []).map((t, i) => (
                   <TeamCard
                     key={i}
                     team={t}
@@ -151,9 +131,21 @@ const Teams: FC = () => {
                   />
                 ))}
               </SimpleGrid>
-            </>
+            ) : (
+              <Center w="100%" h="80vh">
+                <Stack align="center" gap="md" maw={isMobile ? '90%' : '100%'}>
+                  <Icon path={mdiAccountMultiplePlus} size={4} color={theme.colors.gray[5]} />
+                  <Title order={2} ta="center" style={{ wordBreak: 'break-word', hyphens: 'auto' }}>
+                    {t('team.content.no_team.title')}
+                  </Title>
+                  <Text size="sm" c="dimmed" ta="center" style={{ wordBreak: 'break-word', hyphens: 'auto' }}>
+                    {t('team.content.no_team.hint')}
+                  </Text>
+                </Stack>
+              </Center>
+            )
           ) : (
-            <Center w="100%" h="80wh">
+            <Center w="100%" h="80vh">
               <Loader />
             </Center>
           )}
@@ -179,7 +171,7 @@ const Teams: FC = () => {
         <TeamCreateModal
           opened={createOpened}
           title={t('team.button.create')}
-          isOwnTeam={ownTeam ?? false}
+          disallowCreate={disallowCreate ?? false}
           onClose={() => setCreateOpened(false)}
           mutate={mutateTeams}
         />

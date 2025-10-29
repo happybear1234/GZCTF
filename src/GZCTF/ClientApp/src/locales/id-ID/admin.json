@@ -22,6 +22,7 @@
         "delete": "Hapus",
         "save": "Simpan template"
       },
+      "flush_scoreboard": "Segarkan papan skor",
       "hint": {
         "add": "Tambahkan hint"
       },
@@ -32,8 +33,11 @@
       "test_container": {
         "create": "Buat",
         "destroy": "Hapus"
-      },
-      "update_accept_count": "Perbarui AC Counter"
+      }
+    },
+    "divisions": {
+      "edit": "Edit divisi",
+      "new": "Divisi baru"
     },
     "games": {
       "challenges": {
@@ -90,6 +94,10 @@
           "description": "Semua lampiran dinamis akan diunduh dengan nama file ini",
           "label": "Nama lampiran global"
         },
+        "blood_bonus": {
+          "description": "Aktifkan bonus blood untuk challenge ini",
+          "label": "Bonus Blood"
+        },
         "bonus": {
           "description": "The Triple Blood Bonus merujuk pada poin tambahan yang diberikan ketika tantangan diselesaikan oleh tiga tim pertama. Setiap tim bisa mendapatkan bonus skor berdasarkan poin yang saat ini dimiliki tantangan tersebut. Bonus ini akan ditambahkan ke skor tim dalam bentuk persentase tetap.",
           "first_blood": "First Blood Reward (%)",
@@ -102,14 +110,14 @@
           "description": "Multiplication of 0.1 CPU core",
           "label": "CPU Limit (0.1 CPUs)"
         },
+        "deadline": {
+          "label": "Batas waktu",
+          "placeholder": "Tidak ada batas waktu"
+        },
         "delete": "Apakah kamu yakin ingin menghapus tantangan {{name}}?",
         "description": "Deskripsi",
         "difficulty": "Tingkat kesulitan",
         "disable": "Apakah kamu yakin ingin menonaktifkan challenge {{name}}?",
-        "blood_bonus": {
-          "description": "Aktifkan bonus blood untuk challenge ini",
-          "label": "Bonus Blood"
-        },
         "empty": {
           "description": "Klik pojok kanan atas untuk membuat challenge pertama",
           "title": "Waduh! Permainan ini belum memiliki challenge."
@@ -152,8 +160,13 @@
         },
         "solve_count": "Solves",
         "storage_limit": {
-          "description": "Penyimpanan (includ gambar)",
-          "label": "Limit penyimpanan (MB)"
+          "description": "Termasuk gambar",
+          "label": "Penyimpanan (MB)"
+        },
+        "submission_limit": {
+          "description": "0 = tidak terbatas",
+          "label": "Percobaan Maks",
+          "placeholder": "Tidak terbatas"
         },
         "title": "Judul",
         "traffic_capture": {
@@ -164,6 +177,71 @@
           "description": "Setelah dibuat, tidak bisa diubah",
           "label": "Jenis"
         }
+      },
+      "divisions": {
+        "default_permission_label": "Izin default",
+        "delete_confirm": "Hapus divisi {{name}}?",
+        "empty": {
+          "description": "Klik Divisi Baru untuk membuat divisi pertama",
+          "title": "Belum ada divisi"
+        },
+        "form": {
+          "challenge_overrides": {
+            "description": "Pilih tantangan untuk menyesuaikan izin",
+            "label": "Override Tantangan",
+            "placeholder": "Cari tantangan untuk override izin"
+          },
+          "default_permissions": {
+            "description": "Izin default untuk tim di divisi ini",
+            "label": "Izin default"
+          },
+          "invite_code": {
+            "description": "Menimpa kode undangan pada level game",
+            "label": "Kode undangan"
+          },
+          "name": {
+            "description": "Nama divisi.",
+            "label": "Nama divisi"
+          }
+        },
+        "no_permission": "Tidak ada izin yang diberikan",
+        "override_label": "Override Tantangan",
+        "permissions": {
+          "affect_dynamic_score": {
+            "description": "Memengaruhi perhitungan skor dinamis",
+            "label": "Pengaruh skor dinamis"
+          },
+          "all": "Semua izin",
+          "get_blood": {
+            "description": "Mengizinkan menerima poin bonus hadiah blood",
+            "label": "Hadiah blood"
+          },
+          "get_score": {
+            "description": "Mengizinkan mendapatkan poin untuk tantangan",
+            "label": "Dapatkan skor"
+          },
+          "join_game": {
+            "description": "Mengizinkan pengguna di divisi ini bergabung ke game",
+            "label": "Gabung game"
+          },
+          "rank_overall": {
+            "description": "Mengizinkan tampil di papan peringkat keseluruhan",
+            "label": "Peringkat keseluruhan"
+          },
+          "require_review": {
+            "description": "Pendaftaran tim memerlukan persetujuan manual",
+            "label": "Perlu tinjauan"
+          },
+          "submit_flags": {
+            "description": "Mengizinkan mengirim flag",
+            "label": "Kirim flag"
+          },
+          "view_challenge": {
+            "description": "Mengizinkan melihat deskripsi tantangan",
+            "label": "Lihat tantangan"
+          }
+        },
+        "unknown_challenge": "Tantangan #{{id}}"
       },
       "info": {
         "accept_without_review": {
@@ -230,6 +308,7 @@
         },
         "participation": {
           "joined": "Bergabung",
+          "no_division": "Tidak ada divisi",
           "not_joined": "Tidak Terdaftar",
           "stats": "{{count}}/{{total}} bergabung",
           "update": "Apakah kamu ingin mengubah status tim ini menjadi: \"{{status}}\"?"
@@ -296,6 +375,11 @@
         "title": "Kebijakan container"
       },
       "platform": {
+        "api_encryption": {
+          "description": "Enkripsi data sensitif di beberapa API",
+          "label": "Aktifkan Enkripsi API",
+          "not_available": "Web Crypto API tidak tersedia"
+        },
         "color": {
           "description": "Warna kustom untuk platform",
           "label": "Warna platform"
@@ -393,8 +477,13 @@
         "updated": "Challenge berhasil diperbarui"
       },
       "created": "Game telah dibuat",
+      "divisions": {
+        "created": "Divisi dibuat",
+        "deleted": "Divisi dihapus",
+        "invite_copied": "Kode undangan disalin ke clipboard",
+        "updated": "Divisi diperbarui"
+      },
       "info": {
-        "accept_count_updated": "AC counter diperbarui",
         "deleted": "Game dihapus",
         "info_updated": "Game diperbarui",
         "poster": {
@@ -402,7 +491,8 @@
           "uploaded": "Poster berhasil diunggah",
           "uploading": "Mengunggah poster..."
         },
-        "public_key_copied": "Public key disalin ke clipboard"
+        "public_key_copied": "Public key disalin ke clipboard",
+        "scoreboard_flushed": "Cache papan skor telah disegarkan"
       },
       "instances": {
         "created": "Instance berhasil dibuat",
@@ -450,7 +540,7 @@
           }
         }
       },
-      "divisions": "Tekan Enter untuk menambahkan divisi.",
+      "divisions": "Masukkan nama divisi",
       "participation": {
         "bio": "(bio kosong)",
         "team": "(tanpa nama)"
@@ -486,6 +576,7 @@
   "tab": {
     "games": {
       "challenges": "Challenge",
+      "divisions": "Divisi",
       "index": "Game",
       "info": "Informasi",
       "notices": "Notif",

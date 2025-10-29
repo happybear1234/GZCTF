@@ -8,6 +8,7 @@
   "button": {
     "copy": "クリップボードにコピー",
     "reset": "リセット",
+    "retry": "再試行",
     "select_file": "ファイルを選択",
     "try_again": "再試行",
     "uploading": "アップロード中"
@@ -18,7 +19,12 @@
       "title": "ページが存在しません"
     },
     "about": {
-      "slogan": "Hack for fun not for profit"
+      "contributors": "貢献者",
+      "documentation": "公式ドキュメント",
+      "repository": "GitHub リポジトリ",
+      "resources": "リソース",
+      "slogan": "Hack for fun not for profit",
+      "version": "バージョン"
     },
     "color": {
       "custom": {
@@ -73,6 +79,11 @@
     "check_input": "入力内容を確認してください",
     "empty": "内容は空にできません",
     "encountered": "エラーが発生しました",
+    "encryption_failed": {
+      "need_upgrade": "Chrome 133+ / Firefox 130+ / Safari 17+ にアップグレードしてもう一度お試しください",
+      "not_secure_contexts": "Web Crypto APIを有効にするにはHTTPSを使用してください",
+      "title": "データの暗号化に失敗しました"
+    },
     "file_invalid": {
       "message": "ファイル形式とサイズを確認してください",
       "title": "ファイルの読み込みに失敗しました"

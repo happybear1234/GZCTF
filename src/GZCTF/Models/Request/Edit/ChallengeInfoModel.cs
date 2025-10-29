@@ -8,7 +8,7 @@ namespace GZCTF.Models.Request.Edit;
 public class ChallengeInfoModel
 {
     /// <summary>
-    /// Challenge Id
+    /// Challenge ID
     /// </summary>
     public int Id { get; set; }
 
@@ -51,6 +51,11 @@ public class ChallengeInfoModel
     /// </summary>
     public int OriginalScore { get; set; } = 500;
 
+    /// <summary>
+    /// The deadline of the challenge, null means no deadline
+    /// </summary>
+    public DateTimeOffset? DeadlineUtc { get; set; }
+
     internal static ChallengeInfoModel FromChallenge(GameChallenge challenge) =>
         new()
         {
@@ -58,9 +63,10 @@ public class ChallengeInfoModel
             Title = challenge.Title,
             Category = challenge.Category,
             Type = challenge.Type,
-            Score = challenge.CurrentScore,
+            Score = challenge.OriginalScore, // This field should be updated with scoreboard
             MinScore = (int)Math.Floor(challenge.MinScoreRate * challenge.OriginalScore),
             OriginalScore = challenge.OriginalScore,
-            IsEnabled = challenge.IsEnabled
+            IsEnabled = challenge.IsEnabled,
+            DeadlineUtc = challenge.DeadlineUtc
         };
 }

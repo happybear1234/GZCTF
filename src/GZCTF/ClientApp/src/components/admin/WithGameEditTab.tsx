@@ -5,6 +5,7 @@ import {
   mdiFileDocumentCheckOutline,
   mdiFlagOutline,
   mdiKeyboardBackspace,
+  mdiTagOutline,
   mdiTextBoxOutline,
 } from '@mdi/js'
 import { Icon } from '@mdi/react'
@@ -40,6 +41,7 @@ export const WithGameEditTab: FC<GameEditTabProps> = ({
     { icon: mdiTextBoxOutline, title: t('admin.tab.games.info'), path: 'info' },
     { icon: mdiBullhornOutline, title: t('admin.tab.games.notices'), path: 'notices' },
     { icon: mdiFlagOutline, title: t('admin.tab.games.challenges'), path: 'challenges' },
+    { icon: mdiTagOutline, title: t('admin.tab.games.divisions'), path: 'divisions' },
     { icon: mdiAccountGroupOutline, title: t('admin.tab.games.review'), path: 'review' },
     { icon: mdiFileDocumentCheckOutline, title: t('admin.tab.games.writeups'), path: 'writeups' },
   ]
@@ -63,7 +65,7 @@ export const WithGameEditTab: FC<GameEditTabProps> = ({
       head={
         <>
           <Button
-            w="9rem"
+            w="10rem"
             component={Link}
             classNames={{ inner: misc.justifyBetween }}
             leftSection={<Icon path={mdiKeyboardBackspace} size={1} />}
@@ -71,7 +73,7 @@ export const WithGameEditTab: FC<GameEditTabProps> = ({
           >
             {t('admin.button.back')}
           </Button>
-          <Group wrap="nowrap" justify={contentPos ?? 'space-between'} w="calc(100% - 10rem)">
+          <Group wrap="nowrap" justify={contentPos ?? 'space-between'} w="calc(100% - 11rem)">
             {head}
           </Group>
         </>
@@ -83,8 +85,8 @@ export const WithGameEditTab: FC<GameEditTabProps> = ({
           value={activeTab}
           onChange={(value) => value && navigate(`/admin/games/${id}/${value}`)}
           classNames={{
-            root: misc.w9rem,
-            list: misc.w9rem,
+            root: misc.w10rem,
+            list: misc.w10rem,
           }}
         >
           <Tabs.List>
@@ -95,9 +97,8 @@ export const WithGameEditTab: FC<GameEditTabProps> = ({
             ))}
           </Tabs.List>
         </Tabs>
-        <Stack w="calc(100% - 10rem)" pos="relative">
+        <Stack w="calc(100% - 11rem)" pos="relative">
           <LoadingOverlay visible={isLoading ?? false} overlayProps={DEFAULT_LOADING_OVERLAY} />
-
           {children}
         </Stack>
       </Group>

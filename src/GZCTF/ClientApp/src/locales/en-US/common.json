@@ -8,6 +8,7 @@
   "button": {
     "copy": "Copy to Clipboard",
     "reset": "Reset",
+    "retry": "Retry",
     "select_file": "Select File",
     "try_again": "Try Again",
     "uploading": "Uploading"
@@ -18,7 +19,12 @@
       "title": "Page does not exist"
     },
     "about": {
-      "slogan": "Hack for fun not for profit"
+      "contributors": "Contributors",
+      "documentation": "Official Documentation",
+      "repository": "GitHub Repository",
+      "resources": "Resources",
+      "slogan": "Hack for fun not for profit",
+      "version": "Version"
     },
     "color": {
       "custom": {
@@ -73,6 +79,11 @@
     "check_input": "Please check your input",
     "empty": "Content can't be empty",
     "encountered": "An error has occurred",
+    "encryption_failed": {
+      "need_upgrade": "Please upgrade to Chrome 133+ / Firefox 130+ / Safari 17+ and try again",
+      "not_secure_contexts": "Please use HTTPS to enable Web Crypto API",
+      "title": "Data encryption failed"
+    },
     "file_invalid": {
       "message": "Please check file format and size",
       "title": "Failed to load file"

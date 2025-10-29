@@ -16,13 +16,14 @@ import { mdiFlag } from '@mdi/js'
 import { Icon } from '@mdi/react'
 import cx from 'clsx'
 import dayjs from 'dayjs'
-import { FC } from 'react'
+import { FC, useMemo } from 'react'
 import { Trans } from 'react-i18next'
+import { ScrollingText } from '@Components/ScrollingText'
 import { useLanguage } from '@Utils/I18n'
 import { BloodsTypes, PartialIconProps, useChallengeCategoryLabelMap } from '@Utils/Shared'
 import { ChallengeInfo, SubmissionType } from '@Api'
 import classes from '@Styles/ChallengeCard.module.css'
-import hoverClasses from '@Styles/HoverCard.module.css'
+import misc from '@Styles/Misc.module.css'
 import tooltipClasses from '@Styles/Tooltip.module.css'
 
 interface ChallengeCardProps {
@@ -41,19 +42,24 @@ export const ChallengeCard: FC<ChallengeCardProps> = (props: ChallengeCardProps)
   const theme = useMantineTheme()
   const { locale } = useLanguage()
 
+  const isFaded = useMemo(() => {
+    if (!challenge.deadline) return false
+
+    return dayjs().isAfter(dayjs(challenge.deadline))
+  }, [challenge.deadline])
+
   return (
     <Card
       onClick={onClick}
       radius="md"
       shadow="sm"
-      className={cx(hoverClasses.root, classes.root)}
-      data-solved={solved || undefined}
+      className={cx(misc.hoverCard, classes.root)}
+      data-faded={solved || isFaded || undefined}
+      data-no-move
     >
       <Stack gap="xs" pos="relative" style={{ zIndex: 99 }}>
         <Group h="30px" wrap="nowrap" justify="space-between" gap={2}>
-          <Text fw="bold" truncate fz="lg">
-            {challenge.title}
-          </Text>
+          <ScrollingText text={challenge.title || ''} size="lg" />
         </Group>
         <Divider size="sm" color={cateData?.color} />
         <Group wrap="nowrap" justify="space-between" align="center" gap={2}>
@@ -61,7 +67,7 @@ export const ChallengeCard: FC<ChallengeCardProps> = (props: ChallengeCardProps)
             {challenge.score}&nbsp;pts
           </Text>
           <Stack gap="xs">
-            <Title order={6} c="dimmed" ta="center" mt={`calc(${theme.spacing.xs} / 2)`}>
+            <Title order={6} ta="center" mt={`calc(${theme.spacing.xs} / 2)`}>
               <Trans
                 i18nKey={'challenge.content.solved'}
                 values={{
@@ -69,7 +75,7 @@ export const ChallengeCard: FC<ChallengeCardProps> = (props: ChallengeCardProps)
                 }}
               >
                 _
-                <Code fz="sm" fw="bold" bg="transparent">
+                <Code fz="sm" fw="bolder" bg="transparent">
                   _
                 </Code>
                 _
@@ -97,7 +103,7 @@ export const ChallengeCard: FC<ChallengeCardProps> = (props: ChallengeCardProps)
                       }
                     >
                       <div style={{ position: 'relative', height: 20 }}>
-                        <div style={{ position: 'relative', zIndex: 92 }}>
+                        <div className={classes.blood}>
                           <Icon {...iconProps} />
                         </div>
                         <Box

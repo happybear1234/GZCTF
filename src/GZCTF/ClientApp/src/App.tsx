@@ -10,11 +10,12 @@ import { useRoutes } from 'react-router'
 import { SWRConfig } from 'swr'
 import routes from '~react-pages'
 import { ErrorFallback } from '@Components/ErrorFallback'
+import { WsrxProvider } from '@Components/WsrxProvider'
+import { localCacheProvider } from '@Utils/Cache'
 import { useLanguage } from '@Utils/I18n'
 import { useCustomTheme } from '@Utils/ThemeOverride'
-import { useBanner, localCacheProvider } from '@Hooks/useConfig'
+import { useBanner } from '@Hooks/useConfig'
 import { fetcher } from '@Api'
-import '@mantine/carousel/styles.css'
 import '@mantine/core/styles.css'
 import '@mantine/dates/styles.css'
 import '@mantine/dropzone/styles.css'
@@ -42,15 +43,17 @@ export const App: FC = () => {
                   fetcher,
                 }}
               >
-                <Suspense
-                  fallback={
-                    <Center h="100vh" w="100vw">
-                      <Loader />
-                    </Center>
-                  }
-                >
-                  {useRoutes(routes)}
-                </Suspense>
+                <WsrxProvider>
+                  <Suspense
+                    fallback={
+                      <Center h="100vh" w="100vw">
+                        <Loader />
+                      </Center>
+                    }
+                  >
+                    {useRoutes(routes)}
+                  </Suspense>
+                </WsrxProvider>
               </SWRConfig>
             </ModalsProvider>
           </DatesProvider>

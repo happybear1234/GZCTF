@@ -395,6 +395,12 @@
   <data name="CronJob_Stopped" xml:space="preserve">
     <value>Cron job dihentikan</value>
   </data>
+  <data name="CronJob_ExecuteFailed" xml:space="preserve">
+    <value>Gagal eksekusi cronjob {0}: {1}</value>
+  </data>
+  <data name="CronJob_LaunchedWatchDog" xml:space="preserve">
+    <value>Instance lain sedang ambil alih cronjob, silahkan jalankan watchdog.</value>
+  </data>
   <data name="Database_ConnectionFailed" xml:space="preserve">
     <value>Gagal terhubung ke database ({0}), silakan periksa string koneksi database</value>
   </data>
@@ -914,6 +920,9 @@
   <data name="Challenge_UseAssetsApiForDynamic" xml:space="preserve">
     <value>Gunakan aset API untuk mengunggah lampiran</value>
   </data>
+  <data name="Challenge_SubmissionLimitExceeded" xml:space="preserve">
+    <value>Batas pengiriman tercapai</value>
+  </data>
   <data name="Container_AddressResolveFailed" xml:space="preserve">
     <value>Gagal mem-parsing alamat container</value>
   </data>
@@ -989,8 +998,8 @@
   <data name="Team_MemberRemoved" xml:space="preserve">
     <value>Kick {0} dari tim {1}</value>
   </data>
-  <data name="Team_MultipleCreationNotAllowed" xml:space="preserve">
-    <value>Tidak diizinkan membuat lebih dari satu tim</value>
+  <data name="Team_ExceededCreationLimit" xml:space="preserve">
+    <value>Anda telah melebihi batas jumlah tim yang dimiliki</value>
   </data>
   <data name="Team_NameEmpty" xml:space="preserve">
     <value>Nama tim tidak boleh kosong</value>
@@ -1008,7 +1017,7 @@
     <value>Pengguna yang dipindahkan tidak ada</value>
   </data>
   <data name="Team_NewCaptainTeamTooMany" xml:space="preserve">
-    <value>Terlalu banyak tim yang menyerahkan</value>
+    <value>Kapten baru memiliki terlalu banyak tim</value>
   </data>
   <data name="Team_UserJoined" xml:space="preserve">
     <value>Bergabun dengan tim {0}</value>
@@ -1045,5 +1054,14 @@
   </data>
   <data name="Init_StorageInitFailed" xml:space="preserve">
     <value>Gagal menginisialisasi penyedia penyimpanan: {0}</value>
+  </data>
+  <data name="Division_NotFound" xml:space="preserve">
+    <value>Divisi tidak ditemukan</value>
+  </data>
+  <data name="Challenge_SubmissionNoPermission" xml:space="preserve">
+    <value>Tidak memiliki izin untuk mengirim flag</value>
+  </data>
+  <data name="Challenge_DeadlinePassed" xml:space="preserve">
+    <value>Batas waktu untuk tantangan ini telah berakhir</value>
   </data>
 </root>

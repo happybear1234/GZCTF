@@ -11,7 +11,11 @@
     "instance": {
       "create": "Buat baru",
       "destroy": "Hapus",
-      "extend": "Perluas"
+      "extend": "Perluas",
+      "show": {
+        "original": "Beralih ke entri asli",
+        "proxied": "Beralih ke lokal proxy entri"
+      }
     },
     "submit_flag": "Submit flag"
   },
@@ -32,6 +36,17 @@
   },
   "content": {
     "already_solved": "Challenge ini sudah diselesaikan",
+    "attempts": {
+      "count": "Kamu sudah mencoba {{count}} kali!",
+      "exhausted": "Ups, semua percobaan sudah habis!",
+      "placeholder": "Kamu sudah mencapai batas!",
+      "remaining": "{{remaining}} percobaan tersisa, terus berusaha!"
+    },
+    "deadline": {
+      "expired": "Batas waktu berakhir pada {{deadline}}, pengiriman dinonaktifkan",
+      "label": "Batas waktu",
+      "remaining": "Sisa waktu"
+    },
     "flag_placeholders": [
       "Untuk ada, atau tidak ada, flag adalah pertanyaannya",
       "Semua yang berkilau bukanlah flag",

@@ -9,6 +9,9 @@ import { Link, useNavigate } from 'react-router'
 import { AccountView } from '@Components/AccountView'
 import { Captcha, useCaptchaRef } from '@Components/Captcha'
 import { StrengthPasswordInput } from '@Components/StrengthPasswordInput'
+import { encryptApiData } from '@Utils/Crypto'
+import { tryGetClientError } from '@Utils/Shared'
+import { useConfig } from '@Hooks/useConfig'
 import { usePageTitle } from '@Hooks/usePageTitle'
 import api, { RegisterStatus } from '@Api'
 import misc from '@Styles/Misc.module.css'
@@ -19,6 +22,7 @@ const Register: FC = () => {
   const [uname, setUname] = useInputState('')
   const [email, setEmail] = useInputState('')
   const [disabled, setDisabled] = useState(false)
+  const { config } = useConfig()
 
   const navigate = useNavigate()
   const { captchaRef, getToken, cleanUp } = useCaptchaRef()
@@ -90,7 +94,7 @@ const Register: FC = () => {
     try {
       const res = await api.account.accountRegister({
         userName: uname,
-        password: pwd,
+        password: await encryptApiData(t, pwd, config.apiPublicKey),
         email: email,
         challenge: token,
       })
@@ -111,11 +115,13 @@ const Register: FC = () => {
         else navigate('/account/login')
       }
     } catch (err: any) {
+      const { title, message } = tryGetClientError(err, t)
+
       updateNotification({
         id: 'register-status',
         color: 'red',
-        title: t('common.error.encountered'),
-        message: `${err.response.data.title}`,
+        title,
+        message,
         icon: <Icon path={mdiClose} size={1} />,
         loading: false,
         autoClose: true,

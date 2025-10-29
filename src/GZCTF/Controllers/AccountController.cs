@@ -4,13 +4,13 @@ using GZCTF.Middlewares;
 using GZCTF.Models.Internal;
 using GZCTF.Models.Request.Account;
 using GZCTF.Repositories.Interface;
+using GZCTF.Services.Config;
 using GZCTF.Services.Mail;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
-using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace GZCTF.Controllers;
 
@@ -25,6 +25,7 @@ public class AccountController(
     IBlobRepository blobService,
     IHostEnvironment environment,
     ICaptchaExtension captcha,
+    IConfigService configService,
     IOptionsSnapshot<AccountPolicy> accountPolicy,
     IOptionsSnapshot<GlobalConfig> globalConfig,
     UserManager<UserInfo> userManager,
@@ -58,15 +59,19 @@ public class AccountController(
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Account_AvailableEmailDomain),
                 accountPolicy.Value.EmailDomainList]));
 
+        var password = configService.DecryptApiData(model.Password);
+        if (string.IsNullOrWhiteSpace(password))
+            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Model_PasswordRequired)]));
+
         var user = new UserInfo { UserName = model.UserName, Email = model.Email, Role = Role.User };
 
         user.UpdateByHttpContext(HttpContext);
 
-        IdentityResult result = await userManager.CreateAsync(user, model.Password);
+        var result = await userManager.CreateAsync(user, password);
 
         if (!result.Succeeded)
         {
-            UserInfo? current = await userManager.FindByEmailAsync(model.Email);
+            var current = await userManager.FindByEmailAsync(model.Email);
 
             if (current is null)
                 return HandleIdentityError(result.Errors);
@@ -83,7 +88,7 @@ public class AccountController(
             await userManager.UpdateAsync(user);
             await signInManager.SignInAsync(user, true);
 
-            logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Account_UserRegisteredLog)], user,
+            logger.Log(StaticLocalizer[nameof(Resources.Program.Account_UserRegisteredLog)], user,
                 TaskStatus.Success);
             return Ok(new RequestResponse<RegisterStatus>(localizer[nameof(Resources.Program.Account_UserRegistered)],
                 RegisterStatus.LoggedIn,
@@ -92,14 +97,14 @@ public class AccountController(
 
         if (!accountPolicy.Value.EmailConfirmationRequired)
         {
-            logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Account_UserRegisteredWaitingApprovalLog)],
+            logger.Log(StaticLocalizer[nameof(Resources.Program.Account_UserRegisteredWaitingApprovalLog)],
                 user, TaskStatus.Success);
             return Ok(new RequestResponse<RegisterStatus>(
                 localizer[nameof(Resources.Program.Account_UserRegisteredWaitingApproval)],
                 RegisterStatus.AdminConfirmationRequired, StatusCodes.Status200OK));
         }
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Account_SendEmailVerification)], user,
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Account_SendEmailVerification)], user,
             TaskStatus.Pending);
 
         var rToken = Codec.Base64.Encode(await userManager.GenerateEmailConfirmationTokenAsync(user));
@@ -151,7 +156,7 @@ public class AccountController(
         if (accountPolicy.Value.UseCaptcha && !await captcha.VerifyAsync(model, HttpContext, token))
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Account_TokenValidationFailed)]));
 
-        UserInfo? user = await userManager.FindByEmailAsync(model.Email!);
+        var user = await userManager.FindByEmailAsync(model.Email!);
         if (user is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Account_UserNotExist)],
                 StatusCodes.Status404NotFound));
@@ -163,7 +168,7 @@ public class AccountController(
         if (!accountPolicy.Value.EmailConfirmationRequired)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Account_ResetPasswordFromAdmin)]));
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Account_SendEmailVerification)], HttpContext,
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Account_SendEmailVerification)], HttpContext,
             TaskStatus.Pending);
 
         var rToken = Codec.Base64.Encode(await userManager.GeneratePasswordResetTokenAsync(user));
@@ -197,19 +202,23 @@ public class AccountController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PasswordReset([FromBody] PasswordResetModel model)
     {
-        UserInfo? user = await userManager.FindByEmailAsync(Codec.Base64.Decode(model.Email));
+        var password = configService.DecryptApiData(model.Password);
+        if (string.IsNullOrWhiteSpace(password))
+            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Model_PasswordRequired)]));
+
+        var user = await userManager.FindByEmailAsync(Codec.Base64.Decode(model.Email));
         if (user is null)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Account_InvalidEmail)]));
 
         user.UpdateByHttpContext(HttpContext);
 
-        IdentityResult result =
-            await userManager.ResetPasswordAsync(user, Codec.Base64.Decode(model.RToken), model.Password);
+        var token = Codec.Base64.Decode(model.RToken);
+        var result = await userManager.ResetPasswordAsync(user, token, password);
 
         if (!result.Succeeded)
             return HandleIdentityError(result.Errors);
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Account_PasswordReset)], user, TaskStatus.Success);
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Account_PasswordReset)], user, TaskStatus.Success);
 
         return Ok();
     }
@@ -230,19 +239,19 @@ public class AccountController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Verify([FromBody] AccountVerifyModel model)
     {
-        UserInfo? user = await userManager.FindByEmailAsync(Codec.Base64.Decode(model.Email));
+        var user = await userManager.FindByEmailAsync(Codec.Base64.Decode(model.Email));
 
         if (user is null || user.EmailConfirmed)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Account_InvalidEmail)]));
 
-        IdentityResult result = await userManager.ConfirmEmailAsync(user, Codec.Base64.Decode(model.Token));
+        var result = await userManager.ConfirmEmailAsync(user, Codec.Base64.Decode(model.Token));
 
         if (!result.Succeeded)
             return Unauthorized(new RequestResponse(
                 localizer[nameof(Resources.Program.Account_EmailVerificationFailed)],
                 StatusCodes.Status401Unauthorized));
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Account_EmailVerified)], user, TaskStatus.Success);
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Account_EmailVerified)], user, TaskStatus.Success);
         await signInManager.SignInAsync(user, true);
 
         user.LastSignedInUtc = DateTimeOffset.UtcNow;
@@ -277,7 +286,11 @@ public class AccountController(
         if (accountPolicy.Value.UseCaptcha && !await captcha.VerifyAsync(model, HttpContext, token))
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Account_TokenValidationFailed)]));
 
-        UserInfo? user = await userManager.FindByNameAsync(model.UserName);
+        var password = configService.DecryptApiData(model.Password);
+        if (string.IsNullOrWhiteSpace(password))
+            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Model_PasswordRequired)]));
+
+        var user = await userManager.FindByNameAsync(model.UserName);
         user ??= await userManager.FindByEmailAsync(model.UserName);
 
         if (user is null)
@@ -293,15 +306,14 @@ public class AccountController(
         user.UpdateByHttpContext(HttpContext);
 
         await signInManager.SignOutAsync();
-
-        SignInResult result = await signInManager.PasswordSignInAsync(user, model.Password, true, false);
+        var result = await signInManager.PasswordSignInAsync(user, password, true, false);
 
         if (!result.Succeeded)
             return Unauthorized(new RequestResponse(
                 localizer[nameof(Resources.Program.Account_IncorrectUserNameOrPassword)],
                 StatusCodes.Status401Unauthorized));
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Account_UserLogined)], user, TaskStatus.Success);
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Account_UserLogined)], user, TaskStatus.Success);
 
         return Ok();
     }
@@ -340,23 +352,23 @@ public class AccountController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update([FromBody] ProfileUpdateModel model)
     {
-        UserInfo? user = await userManager.GetUserAsync(User);
+        var user = await userManager.GetUserAsync(User);
 
         if (model.UserName is not null && model.UserName != user!.UserName)
         {
             var oldName = user.UserName;
 
-            IdentityResult unameRes = await userManager.SetUserNameAsync(user, model.UserName);
+            var unameRes = await userManager.SetUserNameAsync(user, model.UserName);
 
             if (!unameRes.Succeeded)
                 return HandleIdentityError(unameRes.Errors);
 
-            logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Account_UserUpdated), oldName!, user.UserName!],
+            logger.Log(StaticLocalizer[nameof(Resources.Program.Account_UserUpdated), oldName!, user.UserName!],
                 user, TaskStatus.Success);
         }
 
         user!.UpdateUserInfo(model);
-        IdentityResult result = await userManager.UpdateAsync(user);
+        var result = await userManager.UpdateAsync(user);
 
         if (!result.Succeeded)
             return HandleIdentityError(result.Errors);
@@ -380,13 +392,22 @@ public class AccountController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ChangePassword([FromBody] PasswordChangeModel model)
     {
-        UserInfo? user = await userManager.GetUserAsync(User);
-        IdentityResult result = await userManager.ChangePasswordAsync(user!, model.Old, model.New);
+        var user = await userManager.GetUserAsync(User);
+
+        var oldPassword = configService.DecryptApiData(model.Old);
+        if (string.IsNullOrWhiteSpace(oldPassword))
+            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Model_OldPasswordRequired)]));
+
+        var newPassword = configService.DecryptApiData(model.New);
+        if (string.IsNullOrWhiteSpace(newPassword))
+            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Model_NewPasswordRequired)]));
+
+        var result = await userManager.ChangePasswordAsync(user!, oldPassword, newPassword);
 
         if (!result.Succeeded)
             return HandleIdentityError(result.Errors);
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Account_PasswordChanged)], user,
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Account_PasswordChanged)], user,
             TaskStatus.Success);
 
         return Ok();
@@ -417,13 +438,13 @@ public class AccountController(
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Account_AvailableEmailDomain),
                 accountPolicy.Value.EmailDomainList]));
 
-        UserInfo? user = await userManager.GetUserAsync(User);
+        var user = await userManager.GetUserAsync(User);
 
         if (!accountPolicy.Value.EmailConfirmationRequired)
             return BadRequest(
                 new RequestResponse<bool>(localizer[nameof(Resources.Program.Account_ChangeEmailFromAdmin)], false));
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Account_SendEmailChange)], user,
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Account_SendEmailChange)], user,
             TaskStatus.Pending);
 
         var token = Codec.Base64.Encode(await userManager.GenerateChangeEmailTokenAsync(user!, model.NewMail));
@@ -461,14 +482,14 @@ public class AccountController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> MailChangeConfirm([FromBody] AccountVerifyModel model)
     {
-        UserInfo? user = await userManager.GetUserAsync(User);
-        IdentityResult result = await userManager.ChangeEmailAsync(user!, Codec.Base64.Decode(model.Email),
+        var user = await userManager.GetUserAsync(User);
+        var result = await userManager.ChangeEmailAsync(user!, Codec.Base64.Decode(model.Email),
             Codec.Base64.Decode(model.Token));
 
         if (!result.Succeeded)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Account_InvalidEmail)]));
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Account_EmailChanged)], user, TaskStatus.Success);
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Account_EmailChanged)], user, TaskStatus.Success);
 
         return Ok();
     }
@@ -488,7 +509,7 @@ public class AccountController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Profile()
     {
-        UserInfo? user = await userManager.GetUserAsync(User);
+        var user = await userManager.GetUserAsync(User);
 
         return Ok(ProfileUserInfoModel.FromUserInfo(user!));
     }
@@ -517,23 +538,23 @@ public class AccountController(
                 return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.File_SizeTooLarge)]));
         }
 
-        UserInfo? user = await userManager.GetUserAsync(User);
+        var user = await userManager.GetUserAsync(User);
 
         if (user!.AvatarHash is not null)
             await blobService.DeleteBlobByHash(user.AvatarHash, token);
 
-        LocalFile? avatar = await blobService.CreateOrUpdateImage(file, "avatar", 300, token);
+        var avatar = await blobService.CreateOrUpdateImage(file, "avatar", 300, token);
 
         if (avatar is null)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Avatar_UpdateFailed)]));
 
         user.AvatarHash = avatar.Hash;
-        IdentityResult result = await userManager.UpdateAsync(user);
+        var result = await userManager.UpdateAsync(user);
 
         if (result != IdentityResult.Success)
             return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Account_UserUpdateFailed)]));
 
-        logger.Log(Program.StaticLocalizer[nameof(Resources.Program.Account_AvatarUpdated), avatar.Hash[..8]], user,
+        logger.Log(StaticLocalizer[nameof(Resources.Program.Account_AvatarUpdated), avatar.Hash[..8]], user,
             TaskStatus.Success);
 
         return Ok(avatar.Url());

@@ -8,7 +8,11 @@
     "save": "Actualizar info"
   },
   "content": {
-    "create": "Puedes crear un equipo e invitar a otros a unirse. Cada jugador solo puede crear un equipo.",
+    "create": "Puedes crear un equipo e invitar a otros a unirse.",
+    "disallow_create": {
+      "content": "Has alcanzado el número máximo de equipos que puedes tener.<br/>Por favor, disuelve un equipo existente para crear uno nuevo.",
+      "title": "Has superado el límite"
+    },
     "disband": {
       "confirm": {
         "message": "¿Estás seguro de que deseas disolver el equipo \"{{team}}\"?",
@@ -28,9 +32,9 @@
         "title": "Confirmar salida"
       }
     },
-    "no_create": {
-      "content": "Cada jugador solo puede crear un equipo.<br/>Puedes disolver el equipo existente y crear uno nuevo.",
-      "title": "Has creado un equipo"
+    "no_team": {
+      "hint": "Crea un nuevo equipo o únete a uno existente para comenzar",
+      "title": "Aún no tienes equipo"
     },
     "role": {
       "captain": "Capitán",

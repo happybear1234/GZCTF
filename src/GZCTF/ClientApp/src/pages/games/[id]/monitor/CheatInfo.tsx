@@ -27,8 +27,8 @@ import { WithGameMonitor } from '@Components/WithGameMonitor'
 import { RequireRole } from '@Components/WithRole'
 import { ParticipationStatusControl } from '@Components/admin/ParticipationStatusControl'
 import { SwitchLabel } from '@Components/admin/SwitchLabel'
-import { showErrorNotification } from '@Utils/ApiHelper'
 import { useLanguage } from '@Utils/I18n'
+import { showErrorMsg } from '@Utils/Shared'
 import { useParticipationStatusMap } from '@Utils/Shared'
 import { useDisplayInputStyles } from '@Utils/ThemeOverride'
 import { OnceSWRConfig } from '@Hooks/useConfig'
@@ -76,6 +76,7 @@ interface CheatTeamInfo {
   lastSubmitTime?: dayjs.Dayjs
   participateId?: number
   division?: string | null
+  divisionId?: number | null
   submissionInfo: Set<CheatSubmissionInfo>
 }
 
@@ -95,6 +96,7 @@ const ToCheatTeamInfo = (cheatInfo: CheatInfoModel[]) => {
           teamId: part.team?.id,
           status: part.status,
           participateId: part.id,
+          divisionId: part.divisionId,
           division: part.division,
           lastSubmitTime: time,
           submissionInfo: new Set<CheatSubmissionInfo>(),
@@ -221,8 +223,11 @@ const CheatInfoItem: FC<CheatInfoItemProps> = (props) => {
               {RequireRole(Role.Admin, userRole) && (
                 <ParticipationStatusControl
                   disabled={disabled}
-                  participateId={cheatTeamInfo.participateId!}
-                  status={cheatTeamInfo.status!}
+                  participation={{
+                    id: cheatTeamInfo.participateId!,
+                    divisionId: cheatTeamInfo.divisionId!,
+                    status: cheatTeamInfo.status!,
+                  }}
                   setParticipation={setParticipation}
                   m={`0 ${theme.spacing.xl}`}
                   miw={theme.spacing.xl}
@@ -396,7 +401,7 @@ const CheatInfo: FC = () => {
         icon: <Icon path={mdiCheck} size={1} />,
       })
     } catch (err: any) {
-      showErrorNotification(err, t)
+      showErrorMsg(err, t)
     } finally {
       setDisabled(false)
     }

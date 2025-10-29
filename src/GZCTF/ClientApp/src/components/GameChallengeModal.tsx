@@ -6,12 +6,15 @@ import { Icon } from '@mdi/react'
 import React, { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChallengeModal } from '@Components/ChallengeModal'
-import { showErrorNotification } from '@Utils/ApiHelper'
+import { encryptApiData } from '@Utils/Crypto'
+import { showErrorMsg } from '@Utils/Shared'
 import { ChallengeCategoryItemProps } from '@Utils/Shared'
+import { useConfig } from '@Hooks/useConfig'
 import api, { AnswerResult, ChallengeType, SubmissionType } from '@Api'
 
 interface GameChallengeModalProps extends ModalProps {
   gameId: number
+  gameTitle: string
   gameEnded: boolean
   cateData: ChallengeCategoryItemProps
   title: string
@@ -21,12 +24,13 @@ interface GameChallengeModalProps extends ModalProps {
 }
 
 export const GameChallengeModal: FC<GameChallengeModalProps> = (props) => {
-  const { gameId, gameEnded, challengeId, cateData, status, title, score, ...modalProps } = props
+  const { gameId, gameTitle, gameEnded, challengeId, cateData, status, title, score, ...modalProps } = props
 
   const { data: challenge, mutate } = api.game.useGameGetChallenge(gameId, challengeId, {
     refreshInterval: 120 * 1000,
   })
 
+  const { config } = useConfig()
   const { t } = useTranslation()
 
   const wrongFlagHints = t('challenge.content.wrong_flag_hints', {
@@ -39,6 +43,9 @@ export const GameChallengeModal: FC<GameChallengeModalProps> = (props) => {
   const [disabled, setDisabled] = useState(false)
   const [submitId, setSubmitId] = useState(0)
   const [flag, setFlag] = useInputState('')
+  const [solvedChallengeId, setSolvedChallengeId] = useState<number | null>(null)
+
+  const isLimitReached = (challenge?.limit && (challenge.attempts ?? 0) >= challenge.limit) || false
 
   const onCreate = async () => {
     if (!challengeId || disabled) return
@@ -61,18 +68,16 @@ export const GameChallengeModal: FC<GameChallengeModalProps> = (props) => {
         icon: <Icon path={mdiCheck} size={1} />,
       })
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
   }
 
-  const onDestroy = async () => {
-    if (!challengeId || disabled) return
-    setDisabled(true)
-
+  const requestDestroy = async () => {
     try {
       await mutate()
+
       if (!challenge?.context?.instanceEntry) return
 
       await api.game.gameDeleteContainer(gameId, challengeId)
@@ -91,10 +96,17 @@ export const GameChallengeModal: FC<GameChallengeModalProps> = (props) => {
         icon: <Icon path={mdiCheck} size={1} />,
       })
     } catch (e) {
-      showErrorNotification(e, t)
-    } finally {
-      setDisabled(false)
+      showErrorMsg(e, t)
     }
+  }
+
+  const onDestroy = async () => {
+    if (!challengeId || disabled) return
+    setDisabled(true)
+
+    await requestDestroy()
+
+    setDisabled(false)
   }
 
   const onExtend = async () => {
@@ -111,7 +123,7 @@ export const GameChallengeModal: FC<GameChallengeModalProps> = (props) => {
         },
       })
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
@@ -131,7 +143,7 @@ export const GameChallengeModal: FC<GameChallengeModalProps> = (props) => {
 
     try {
       const res = await api.game.gameSubmit(gameId, challengeId, {
-        flag,
+        flag: await encryptApiData(t, flag.trim(), config.apiPublicKey),
       })
       setSubmitId(res.data)
       notifications.clean()
@@ -143,35 +155,57 @@ export const GameChallengeModal: FC<GameChallengeModalProps> = (props) => {
         loading: true,
         autoClose: false,
       })
+
+      const nxt = (challenge?.attempts ?? 0) + 1
+      const attempts = challenge?.limit && challenge.limit > 0 ? Math.min(nxt, challenge.limit) : nxt
+
+      mutate({
+        attempts,
+        ...challenge,
+      })
+      return
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
+      setDisabled(false)
+      return
     }
   }
 
   useEffect(() => {
-    // submitId initialization will trigger useEffect
     if (!submitId) return
 
-    const pollingStatus = async () => {
+    const polling = setInterval(async () => {
       try {
         const res = await api.game.gameStatus(gameId, challengeId, submitId)
-        if (res.data === AnswerResult.FlagSubmitted) return
-        setDisabled(false)
-        setFlag('')
-        checkDataFlag(submitId, res.data)
+        if (res.data !== AnswerResult.FlagSubmitted) {
+          setDisabled(false)
+          setFlag('')
+          checkDataFlag(submitId, res.data)
+          clearInterval(polling)
+        }
       } catch (err) {
         setDisabled(false)
         setFlag('')
-        showErrorNotification(err, t)
+        showErrorMsg(err, t)
+        clearInterval(polling)
       }
-    }
+    }, 500)
 
-    const polling = setInterval(pollingStatus, 500)
     return () => clearInterval(polling)
   }, [submitId])
 
+  useEffect(() => {
+    if (challengeId !== solvedChallengeId) return
+
+    if (status !== SubmissionType.Unaccepted && status !== undefined) {
+      // status has been updated, reset solved challenge id
+      setSolvedChallengeId(null)
+    }
+  }, [status, challengeId, challenge])
+
   const checkDataFlag = async (id: number, data: string) => {
     if (data === AnswerResult.Accepted) {
+      setSolvedChallengeId(challengeId)
       updateNotification({
         id: 'flag-submitted',
         color: 'teal',
@@ -183,8 +217,7 @@ export const GameChallengeModal: FC<GameChallengeModalProps> = (props) => {
         autoClose: 8000,
         loading: false,
       })
-      if (isDynamic && challenge.context?.instanceEntry) await onDestroy()
-      await mutate()
+      if (isDynamic && challenge.context?.instanceEntry) await requestDestroy()
       props.onClose()
     } else if (data === AnswerResult.WrongAnswer) {
       updateNotification({
@@ -214,15 +247,16 @@ export const GameChallengeModal: FC<GameChallengeModalProps> = (props) => {
   return (
     <ChallengeModal
       {...modalProps}
+      gameTitle={gameTitle}
       challenge={challenge ?? { title, score }}
       cateData={cateData}
-      solved={status !== SubmissionType.Unaccepted && status !== undefined}
+      solved={(status !== SubmissionType.Unaccepted && status !== undefined) || solvedChallengeId === challengeId}
       flag={flag}
       setFlag={setFlag}
       onCreate={onCreate}
       onDestroy={onDestroy}
       onSubmitFlag={onSubmit}
-      disabled={disabled}
+      disabled={disabled || isLimitReached}
       onExtend={onExtend}
     />
   )

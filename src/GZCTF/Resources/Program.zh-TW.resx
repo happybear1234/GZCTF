@@ -395,6 +395,12 @@
   <data name="CronJob_Stopped" xml:space="preserve">
     <value>定時任務已停止</value>
   </data>
+  <data name="CronJob_ExecuteFailed" xml:space="preserve">
+    <value>執行定時任務 {0} 失敗：{1}</value>
+  </data>
+  <data name="CronJob_LaunchedWatchDog" xml:space="preserve">
+    <value>有其他實例持有定時任務執行鎖，本實例運行看門狗程序。</value>
+  </data>
   <data name="Database_ConnectionFailed" xml:space="preserve">
     <value>資料庫連接失敗({0})，請檢查資料庫連接字符串配置</value>
   </data>
@@ -914,6 +920,9 @@
   <data name="Challenge_UseAssetsApiForDynamic" xml:space="preserve">
     <value>動態附件題目請使用 assets API 上傳附件</value>
   </data>
+  <data name="Challenge_SubmissionLimitExceeded" xml:space="preserve">
+    <value>提交次數限制已達上限</value>
+  </data>
   <data name="Container_AddressResolveFailed" xml:space="preserve">
     <value>容器地址解析失敗</value>
   </data>
@@ -989,8 +998,8 @@
   <data name="Team_MemberRemoved" xml:space="preserve">
     <value>從隊伍 {0} 踢除 {1}</value>
   </data>
-  <data name="Team_MultipleCreationNotAllowed" xml:space="preserve">
-    <value>不允許創建多個隊伍</value>
+  <data name="Team_ExceededCreationLimit" xml:space="preserve">
+    <value>隊伍創建數量超過限制</value>
   </data>
   <data name="Team_NameEmpty" xml:space="preserve">
     <value>隊伍名不能為空</value>
@@ -1045,5 +1054,14 @@
   </data>
   <data name="Init_StorageInitFailed" xml:space="preserve">
     <value>無法初始化儲存提供者：{0}</value>
+  </data>
+  <data name="Division_NotFound" xml:space="preserve">
+    <value>找不到分組</value>
+  </data>
+  <data name="Challenge_SubmissionNoPermission" xml:space="preserve">
+    <value>沒有提交 flag 的權限</value>
+  </data>
+  <data name="Challenge_DeadlinePassed" xml:space="preserve">
+    <value>此題目的截止時間已過</value>
   </data>
 </root>

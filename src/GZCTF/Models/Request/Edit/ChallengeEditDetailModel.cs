@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using GZCTF.Models.Request.Game;
 
 namespace GZCTF.Models.Request.Edit;
@@ -9,7 +10,7 @@ namespace GZCTF.Models.Request.Edit;
 public class ChallengeEditDetailModel
 {
     /// <summary>
-    /// Challenge Id
+    /// Challenge ID
     /// </summary>
     public int Id { get; set; }
 
@@ -125,6 +126,17 @@ public class ChallengeEditDetailModel
     public bool? DisableBloodBonus { get; set; } = false;
 
     /// <summary>
+    /// The deadline of the challenge, null means no deadline
+    /// </summary>
+    public DateTimeOffset? DeadlineUtc { get; set; }
+
+    /// <summary>
+    /// Maximum number of submissions allowed per team (0 = no limit)
+    /// </summary>
+    [Required]
+    public int SubmissionLimit { get; set; }
+
+    /// <summary>
     /// Initial score
     /// </summary>
     [Required]
@@ -165,8 +177,10 @@ public class ChallengeEditDetailModel
             MinScoreRate = chal.MinScoreRate,
             Difficulty = chal.Difficulty,
             FileName = chal.FileName,
-            AcceptedCount = chal.AcceptedCount,
             Attachment = chal.Attachment,
+            SubmissionLimit = chal.SubmissionLimit,
+            DeadlineUtc = chal.DeadlineUtc,
+            AcceptedCount = 0, // This field should be set externally
             TestContainer = chal.TestContainer is null ? null : ContainerInfoModel.FromContainer(chal.TestContainer),
             Flags = chal.Flags.Select(FlagInfoModel.FromFlagContext).ToList()
         };

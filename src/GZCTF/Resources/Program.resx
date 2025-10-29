@@ -395,6 +395,12 @@
   <data name="CronJob_Stopped" xml:space="preserve">
     <value>Cron job has been stopped</value>
   </data>
+  <data name="CronJob_ExecuteFailed" xml:space="preserve">
+    <value>Failed to execute cronjob {0}: {1}</value>
+  </data>
+  <data name="CronJob_LaunchedWatchDog" xml:space="preserve">
+    <value>Another instance is holding the cronjobs, let's run the watchdog.</value>
+  </data>
   <data name="Database_ConnectionFailed" xml:space="preserve">
     <value>Failed to connect to the database ({0}), please check the database connection string</value>
   </data>
@@ -914,6 +920,9 @@
   <data name="Challenge_UseAssetsApiForDynamic" xml:space="preserve">
     <value>Use assets API to upload attachments</value>
   </data>
+  <data name="Challenge_SubmissionLimitExceeded" xml:space="preserve">
+    <value>Submission limit reached</value>
+  </data>
   <data name="Container_AddressResolveFailed" xml:space="preserve">
     <value>Container address parse failed</value>
   </data>
@@ -989,8 +998,8 @@
   <data name="Team_MemberRemoved" xml:space="preserve">
     <value>Kick {0} from Team {1}</value>
   </data>
-  <data name="Team_MultipleCreationNotAllowed" xml:space="preserve">
-    <value>Not allowed creating more than one team</value>
+  <data name="Team_ExceededCreationLimit" xml:space="preserve">
+    <value>Exceeded the limit of owned teams</value>
   </data>
   <data name="Team_NameEmpty" xml:space="preserve">
     <value>Team name cannot be empty</value>
@@ -1008,7 +1017,7 @@
     <value>Transferred user does not exist</value>
   </data>
   <data name="Team_NewCaptainTeamTooMany" xml:space="preserve">
-    <value>Too many handed over teams</value>
+    <value>The new captain has too many teams</value>
   </data>
   <data name="Team_UserJoined" xml:space="preserve">
     <value>Join Team {0}</value>
@@ -1045,5 +1054,14 @@
   </data>
   <data name="Init_StorageInitFailed" xml:space="preserve">
     <value>Failed to initialize storage provider: {0}</value>
+  </data>
+  <data name="Division_NotFound" xml:space="preserve">
+    <value>Division not found</value>
+  </data>
+  <data name="Challenge_SubmissionNoPermission" xml:space="preserve">
+    <value>No permission to submit flags</value>
+  </data>
+  <data name="Challenge_DeadlinePassed" xml:space="preserve">
+    <value>The deadline for this challenge has passed</value>
   </data>
 </root>

@@ -20,17 +20,21 @@ namespace GZCTF.Controllers;
 [Route("api")]
 [ApiController]
 public class InfoController(
+    CacheHelper cacheHelper,
     IDistributedCache cache,
     ICaptchaExtension captcha,
     IPostRepository postRepository,
+    IServiceProvider serviceProvider,
     ILogger<InfoController> logger,
     IOptionsSnapshot<CaptchaConfig> captchaConfig,
-    IOptionsSnapshot<GlobalConfig> globalConfig,
-    IOptionsSnapshot<ContainerPolicy> containerPolicy,
-    IOptionsSnapshot<ContainerProvider> containerProvider,
     IOptionsSnapshot<AccountPolicy> accountPolicy,
     IStringLocalizer<Program> localizer) : ControllerBase
 {
+    static readonly DistributedCacheEntryOptions PowChallengeCacheOptions = new()
+    {
+        SlidingExpiration = TimeSpan.FromMinutes(5)
+    };
+
     /// <summary>
     /// Get the latest posts
     /// </summary>
@@ -41,8 +45,15 @@ public class InfoController(
     /// <response code="200">Successfully retrieved posts</response>
     [HttpGet("Posts/Latest")]
     [ProducesResponseType(typeof(PostInfoModel[]), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetLatestPosts(CancellationToken token) =>
-        Ok((await postRepository.GetPosts(token)).Take(20).Select(PostInfoModel.FromPost));
+    public async Task<IActionResult> GetLatestPosts(CancellationToken token)
+    {
+        var posts = await postRepository.GetPosts(token);
+        (Post[] data, DateTimeOffset lastModified) = posts;
+        var eTag = $"\"latest-{lastModified.ToUnixTimeSeconds():X}\"";
+        if (ContextHelper.IsNotModified(Request, Response, eTag, lastModified))
+            return StatusCode(StatusCodes.Status304NotModified);
+        return Ok(data.Take(20).Select(PostInfoModel.FromPost));
+    }
 
     /// <summary>
     /// Get all posts
@@ -53,9 +64,17 @@ public class InfoController(
     /// <param name="token"></param>
     /// <response code="200">Successfully retrieved posts</response>
     [HttpGet("Posts")]
+    [EnableRateLimiting(nameof(RateLimiter.LimitPolicy.Query))]
     [ProducesResponseType(typeof(PostInfoModel[]), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPosts(CancellationToken token) =>
-        Ok((await postRepository.GetPosts(token)).Select(PostInfoModel.FromPost));
+    public async Task<IActionResult> GetPosts(CancellationToken token)
+    {
+        var posts = await postRepository.GetPosts(token);
+        (Post[] data, DateTimeOffset lastModified) = posts;
+        var eTag = $"\"all-{lastModified.ToUnixTimeSeconds():X}\"";
+        if (ContextHelper.IsNotModified(Request, Response, eTag, lastModified))
+            return StatusCode(StatusCodes.Status304NotModified);
+        return Ok(data.Select(PostInfoModel.FromPost));
+    }
 
     /// <summary>
     /// Get post details
@@ -72,12 +91,16 @@ public class InfoController(
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPost(string id, CancellationToken token)
     {
-        Post? post = await postRepository.GetPostByIdFromCache(id, token);
+        var post = await postRepository.GetPostByIdFromCache(id, token);
 
         if (post is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Post_NotFound)],
                 StatusCodes.Status404NotFound));
 
+        var lastModified = post.UpdateTimeUtc;
+        var eTag = $"\"{post.Id}-{lastModified.ToUnixTimeSeconds():X}\"";
+        if (ContextHelper.IsNotModified(Request, Response, eTag, lastModified))
+            return StatusCode(StatusCodes.Status304NotModified);
         return Ok(PostDetailModel.FromPost(post));
     }
 
@@ -92,14 +115,17 @@ public class InfoController(
     [ProducesResponseType(typeof(ClientConfig), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetClientConfig(CancellationToken token = default)
     {
-        ClientConfig data = await cache.GetOrCreateAsync(logger, CacheKey.ClientConfig,
+        var data = await cacheHelper.GetOrCreateAsync(logger, CacheKey.ClientConfig,
             entry =>
             {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7);
-                return Task.FromResult(ClientConfig.FromConfigs(globalConfig.Value, containerPolicy.Value,
-                    containerProvider.Value));
-            }, token);
+                entry.SlidingExpiration = TimeSpan.FromDays(7);
+                return Task.FromResult(ClientConfig.FromServiceProvider(serviceProvider));
+            }, token: token);
 
+        var lastModified = data.UpdateTimeUtc;
+        var eTag = $"\"cfg-{lastModified.ToUnixTimeSeconds():X}\"";
+        if (ContextHelper.IsNotModified(Request, Response, eTag, lastModified))
+            return StatusCode(StatusCodes.Status304NotModified);
         return Ok(data);
     }
 
@@ -114,15 +140,19 @@ public class InfoController(
     [ProducesResponseType(typeof(ClientCaptchaInfoModel), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetClientCaptchaInfo(CancellationToken token = default)
     {
-        ClientCaptchaInfoModel data = await cache.GetOrCreateAsync(logger, CacheKey.CaptchaConfig,
+        var data = await cacheHelper.GetOrCreateAsync(logger, CacheKey.CaptchaConfig,
             entry =>
             {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7);
+                entry.SlidingExpiration = TimeSpan.FromDays(7);
                 return Task.FromResult(accountPolicy.Value.UseCaptcha
                     ? captcha.ClientInfo()
                     : new ClientCaptchaInfoModel());
-            }, token);
+            }, token: token);
 
+        var lastModified = data.UpdateTimeUtc;
+        var eTag = $"\"cap-{lastModified.ToUnixTimeSeconds():X}\"";
+        if (ContextHelper.IsNotModified(Request, Response, eTag, lastModified))
+            return StatusCode(StatusCodes.Status304NotModified);
         return Ok(data);
     }
 
@@ -143,8 +173,8 @@ public class InfoController(
         if (captchaConfig.Value.Provider != CaptchaProvider.HashPow)
             return NotFound();
 
-        byte[] challenge = RandomNumberGenerator.GetBytes(8);
-        string id = RandomNumberGenerator.GetHexString(12, true);
+        var challenge = RandomNumberGenerator.GetBytes(8);
+        var id = RandomNumberGenerator.GetHexString(12, true);
         await cache.SetAsync(CacheKey.HashPow(id), challenge, PowChallengeCacheOptions, token);
 
         return Ok(new HashPowChallenge
@@ -154,9 +184,4 @@ public class InfoController(
             Difficulty = captchaConfig.Value.HashPow.Difficulty
         });
     }
-
-    static readonly DistributedCacheEntryOptions PowChallengeCacheOptions = new()
-    {
-        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
-    };
 }

@@ -3,6 +3,7 @@ import {
   ActionIcon,
   Avatar,
   Badge,
+  Code,
   Loader,
   MantineThemeOverride,
   Menu,
@@ -33,14 +34,14 @@ const CustomTheme: MantineThemeOverride = {
       '#141414',
     ],
     brand: [
-      '#D0FFF8',
-      '#A7F8EB',
-      '#64F0DA',
-      '#1DE9B6',
-      '#0AD7AF',
-      '#04CAAB',
-      '#02BFA5',
-      '#009985',
+      '#E1FFF9',
+      '#CFFCF1',
+      '#A2F7E2',
+      '#72F1D2',
+      '#4BEDC4',
+      '#2AE5B5',
+      '#18CB9E',
+      '#00AA85',
       '#007F6E',
       '#005A4C',
     ],
@@ -83,11 +84,11 @@ const CustomTheme: MantineThemeOverride = {
   },
   primaryColor: 'brand',
   fontFamily:
-    'IBM Plex Sans, -apple-system, BlinkMacSystemFont, Helvetica Neue, PingFang SC, Microsoft YaHei, Source Han Sans SC, Noto Sans CJK SC, sans-serif',
+    'Lexend, -apple-system, BlinkMacSystemFont, Helvetica Neue, PingFang SC, Microsoft YaHei, Source Han Sans SC, Noto Sans CJK SC, sans-serif',
   fontFamilyMonospace:
     'JetBrains Mono, ui-monospace, SFMono-Regular, Monaco, Consolas, Courier New, monospace, sans-serif',
   headings: {
-    fontFamily: 'IBM Plex Sans, sans-serif',
+    fontFamily: 'Lexend, sans-serif',
   },
   breakpoints: {
     xs: '30em',
@@ -159,6 +160,13 @@ const CustomTheme: MantineThemeOverride = {
     Menu: Menu.extend({
       styles: {
         item: {
+          fontWeight: 500,
+        },
+      },
+    }),
+    Code: Code.extend({
+      styles: {
+        root: {
           fontWeight: 500,
         },
       },

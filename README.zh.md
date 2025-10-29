@@ -9,6 +9,7 @@
 ![version](https://img.shields.io/github/v/release/GZTimeWalker/GZCTF?include_prereleases&label=version)
 ![license](https://img.shields.io/github/license/GZTimeWalker/GZCTF?color=FF5531)
 [![Crowdin](https://badges.crowdin.net/gzctf/localized.svg)](https://crowdin.com/project/gzctf)
+[![codecov](https://codecov.io/gh/GZTimeWalker/GZCTF/branch/develop/graph/badge.svg)](https://codecov.io/gh/GZTimeWalker/GZCTF)
 
 [![Telegram Group](https://img.shields.io/endpoint?color=blue&url=https%3A%2F%2Ftg.sumanjay.workers.dev%2Fgzctf)](https://telegram.dog/gzctf)
 [![QQ Group](https://img.shields.io/badge/QQ%20Group-903244818-blue)](https://jq.qq.com/?_wv=1027&k=muSqhF9x)
@@ -60,7 +61,7 @@ GZ::CTF 是一个基于 ASP.NET Core 的开源 CTF 平台。
 - **分组队伍**得分时间线、分组积分榜
 - 基于 **Docker 或 K8s** 的动态容器分发、管理、多种端口映射方式
 - 基于 SignalR 的**实时**比赛通知、比赛事件和 flag 提交监控及日志监控
-- SMTP 邮件验证功能、基于 Google ReCaptchav3 的恶意注册防护
+- SMTP 邮件验证功能、基于 Cloudflare Turnstile 的恶意注册防护
 - 用户封禁、用户三级权限管理
 - 可选的队伍审核、邀请码、注册邮箱限制
 - 平台内 Writeup 收集、查阅、批量下载
@@ -103,6 +104,7 @@ GZ::CTF 是一个基于 ASP.NET Core 的开源 CTF 平台。
 ## Demo 🗿
 
 ![index.webp](assets/images/index.webp)
+![game.list.webp](assets/images/game.list.webp)
 ![game.challenges.webp](assets/images/game.challenges.webp)
 ![game.scoreboard.webp](assets/images/game.scoreboard.webp)
 ![admin.settings.webp](assets/images/admin.settings.webp)
@@ -168,6 +170,31 @@ _排名不分先后，欢迎提交 PR 进行补充。_
 ## 特别感谢 ❤️‍🔥
 
 感谢 THUCTF 2022 的组织者 NanoApe 提供的赞助及阿里云公网并发压力测试，帮助验证了 GZCTF 单机实例（16c90g）在千级并发、三分钟 134w 请求压力下的服务稳定性。
+
+## 许可证 📄
+
+GZCTF 采用双重许可模式：
+
+1.  **核心源代码**：采用 **GNU Affero General Public License v3.0 (AGPLv3)** 许可。这是项目的主体部分，赋予您广泛的自由以使用、修改和分发。详见 `LICENSE.txt`。
+
+2.  **受限组件**：采用自定义的 **GZCTF 受限许可证** (`LicenseRef-GZCTF-Restricted`)。
+    - **允许使用和分发**：您可以自由使用，并按原样（未经修改）分发这些组件，但必须保留所有版权声明和许可证文本。
+    - **禁止修改或删除**：未经作者书面授权，您**不得修改、删除**这些组件**或对其二次开发**。
+    - **文件列表**：受限组件的完整列表在 `PROPRIETARY_COMPONENTS.md` 文件中定义。
+    - **许可证全文**：请参阅 `license/LicenseRef-GZCTF-Restricted.txt` 以了解详细条款。
+
+当您部署 GZCTF 的 **修改版本** 并对外提供服务时，您需要保留：
+
+- 网站页脚等显著位置保留原始的版权及署名信息
+- 声明所使用的 GZCTF 及其许可证版本
+- 指向原始仓库及许可证原文的链接
+
+### 商标与品牌
+
+- "GZCTF" / "GZ::CTF" 名称、标识及相关品牌资产是作者的商标。
+- 使用规范见 `TRADEMARKS.md`。允许出于描述目的的引用（例如 "Forked from GZCTF"），但不得暗示任何形式的官方认可。
+
+另请参阅 `NOTICE` 文件，获取统一的版权和商标声明。
 
 ## Stars ✨
 

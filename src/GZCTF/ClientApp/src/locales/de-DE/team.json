@@ -8,7 +8,11 @@
     "save": "Informationen aktualisieren"
   },
   "content": {
-    "create": "Sie können ein Team erstellen und andere einladen, beizutreten. Jeder Spieler kann nur ein Team erstellen.",
+    "create": "Sie können ein Team erstellen und andere einladen, beizutreten.",
+    "disallow_create": {
+      "content": "Sie haben die maximale Anzahl an Teams erreicht, die Sie haben können.<br/>Bitte lösen Sie ein bestehendes Team auf, um ein neues zu erstellen.",
+      "title": "Sie haben das Limit überschritten"
+    },
     "disband": {
       "confirm": {
         "message": "Sind Sie sicher, dass Sie das Team \"{{team}}\" auflösen möchten?",
@@ -28,9 +32,9 @@
         "title": "Verlassen bestätigen"
       }
     },
-    "no_create": {
-      "content": "Jeder Spieler kann nur ein Team erstellen.<br/>Sie können das bestehende Team auflösen und ein neues erstellen.",
-      "title": "Sie haben ein Team erstellt"
+    "no_team": {
+      "hint": "Erstellen Sie ein neues Team oder treten Sie einem bestehenden bei, um zu starten",
+      "title": "Noch kein Team"
     },
     "role": {
       "captain": "Kapitän",

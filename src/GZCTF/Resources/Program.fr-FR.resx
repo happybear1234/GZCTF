@@ -402,6 +402,12 @@
   <data name="CronJob_Stopped" xml:space="preserve">
     <value>La tâche cron a été arrêtée</value>
   </data>
+  <data name="CronJob_ExecuteFailed" xml:space="preserve">
+    <value>Échec de l'exécution du cronjob {0} : {1}</value>
+  </data>
+  <data name="CronJob_LaunchedWatchDog" xml:space="preserve">
+    <value>Une autre instance détient les cronjobs, lançons le chien de garde.</value>
+  </data>
   <data name="Database_ConnectionFailed" xml:space="preserve">
     <value>Échec de la connexion à la base de données ({0}), veuillez vérifier la chaîne de connexion de la base de données</value>
   </data>
@@ -927,6 +933,9 @@
   <data name="Challenge_UseAssetsApiForDynamic" xml:space="preserve">
     <value>Utilisez l'API des actifs pour télécharger les pièces jointes</value>
   </data>
+  <data name="Challenge_SubmissionLimitExceeded" xml:space="preserve">
+    <value>Limite de soumissions atteinte</value>
+  </data>
   <data name="Container_AddressResolveFailed" xml:space="preserve">
     <value>Échec de l'analyse de l'adresse du conteneur</value>
   </data>
@@ -1002,8 +1011,8 @@
   <data name="Team_MemberRemoved" xml:space="preserve">
     <value>Exclure {0} de l'équipe {1}</value>
   </data>
-  <data name="Team_MultipleCreationNotAllowed" xml:space="preserve">
-    <value>Créer plus d'une équipe n'est pas autorisé</value>
+  <data name="Team_ExceededCreationLimit" xml:space="preserve">
+    <value>Limite de création d'équipes dépassée</value>
   </data>
   <data name="Team_NameEmpty" xml:space="preserve">
     <value>Le nom de l'équipe ne peut pas être vide</value>
@@ -1021,7 +1030,7 @@
     <value>L'utilisateur transféré n'existe pas</value>
   </data>
   <data name="Team_NewCaptainTeamTooMany" xml:space="preserve">
-    <value>Trop d'équipes transférées</value>
+    <value>Le nouveau capitaine a trop d'équipes</value>
   </data>
   <data name="Team_UserJoined" xml:space="preserve">
     <value>Rejoindre l'équipe {0}</value>
@@ -1058,5 +1067,14 @@
   </data>
   <data name="Init_StorageInitFailed" xml:space="preserve">
     <value>Échec de l'initialisation du fournisseur de stockage : {0}</value>
+  </data>
+  <data name="Division_NotFound" xml:space="preserve">
+    <value>Division introuvable</value>
+  </data>
+  <data name="Challenge_SubmissionNoPermission" xml:space="preserve">
+    <value>Vous n'avez pas l'autorisation de soumettre des flags</value>
+  </data>
+  <data name="Challenge_DeadlinePassed" xml:space="preserve">
+    <value>La date limite pour ce challenge est dépassée</value>
   </data>
 </root>

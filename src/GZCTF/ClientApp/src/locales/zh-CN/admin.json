@@ -22,6 +22,7 @@
         "delete": "删除 flag",
         "save": "保存 flag 模版"
       },
+      "flush_scoreboard": "刷新积分榜",
       "hint": {
         "add": "添加提示"
       },
@@ -32,8 +33,11 @@
       "test_container": {
         "create": "创建测试容器",
         "destroy": "销毁测试容器"
-      },
-      "update_accept_count": "更新解题计数"
+      }
+    },
+    "divisions": {
+      "edit": "编辑分组",
+      "new": "新建分组"
     },
     "games": {
       "challenges": {
@@ -90,6 +94,10 @@
           "description": "所有动态附件均会以此文件名下载",
           "label": "全局附件名"
         },
+        "blood_bonus": {
+          "description": "启用题目的三血加分",
+          "label": "三血奖励"
+        },
         "bonus": {
           "description": "三血奖励加成是指当一个题目被前三个队伍解出时，每个队伍可以得到的分值奖励。三血的奖励基于题目的当前分值，并以一个固定百分比的形式累加至该队伍的得分中。",
           "first_blood": "一血奖励 (%)",
@@ -102,14 +110,14 @@
           "description": "乘以 0.1 即为 CPU 核心数",
           "label": "CPU 限制 (0.1 CPUs)"
         },
+        "deadline": {
+          "label": "截止时间",
+          "placeholder": "不设截止时间"
+        },
         "delete": "你确定要删除题目 {{name}} 吗？",
         "description": "题目描述",
         "difficulty": "难度系数",
         "disable": "你确定要禁用题目 {{name}} 吗？",
-        "blood_bonus": {
-          "description": "启用题目的三血加分",
-          "label": "三血奖励"
-        },
         "empty": {
           "description": "点击右上角创建第一个题目",
           "title": "Ouch! 这个比赛还没有题目"
@@ -155,6 +163,11 @@
           "description": "限制存储空间，含镜像大小",
           "label": "存储限制 (MB)"
         },
+        "submission_limit": {
+          "description": "0 表示不限制",
+          "label": "最大提交次数",
+          "placeholder": "不限制"
+        },
         "title": "题目标题",
         "traffic_capture": {
           "description": "捕获队伍解题流量，需要开启平台代理",
@@ -164,6 +177,71 @@
           "description": "创建后不可更改",
           "label": "题目类型"
         }
+      },
+      "divisions": {
+        "default_permission_label": "默认权限",
+        "delete_confirm": "确定删除分组 {{name}} 吗？",
+        "empty": {
+          "description": "点击右上角的新建分组创建第一个分组",
+          "title": "暂无分组"
+        },
+        "form": {
+          "challenge_overrides": {
+            "description": "选择需要自定义权限的题目",
+            "label": "题目权限覆盖",
+            "placeholder": "搜索需要覆盖权限的题目"
+          },
+          "default_permissions": {
+            "description": "当题目未单独设置权限时将使用默认权限",
+            "label": "默认权限"
+          },
+          "invite_code": {
+            "description": "非空则覆盖比赛邀请码",
+            "label": "邀请码"
+          },
+          "name": {
+            "description": "分组的名称",
+            "label": "分组名称"
+          }
+        },
+        "no_permission": "未授予任何权限",
+        "override_label": "题目权限覆盖",
+        "permissions": {
+          "affect_dynamic_score": {
+            "description": "影响动态分值计算",
+            "label": "影响动态分值"
+          },
+          "all": "全部权限",
+          "get_blood": {
+            "description": "允许获得题目的三血加分",
+            "label": "获取三血奖励"
+          },
+          "get_score": {
+            "description": "允许获取题目得分",
+            "label": "获取得分"
+          },
+          "join_game": {
+            "description": "允许此分组的用户加入比赛",
+            "label": "加入比赛"
+          },
+          "rank_overall": {
+            "description": "允许在全局排行榜排名",
+            "label": "总榜排名"
+          },
+          "require_review": {
+            "description": "队伍报名需要手动审核",
+            "label": "需要审核"
+          },
+          "submit_flags": {
+            "description": "允许提交 flag",
+            "label": "提交 flag"
+          },
+          "view_challenge": {
+            "description": "允许浏览题目详情",
+            "label": "查看题目"
+          }
+        },
+        "unknown_challenge": "题目 #{{id}}"
       },
       "info": {
         "accept_without_review": {
@@ -230,6 +308,7 @@
         },
         "participation": {
           "joined": "已报名",
+          "no_division": "未分组",
           "not_joined": "未报名",
           "stats": "{{count}}/{{total}} 已报名",
           "update": "确定要设为 \"{{status}}\" 吗？"
@@ -296,6 +375,11 @@
         "title": "容器策略"
       },
       "platform": {
+        "api_encryption": {
+          "description": "加密部分敏感数据，如用户密码、flag",
+          "label": "启用 API 数据加密",
+          "not_available": "当前环境不支持 Web Crypto API"
+        },
         "color": {
           "description": "自定义平台颜色，用于生成主题色盘",
           "label": "平台颜色"
@@ -393,8 +477,13 @@
         "updated": "题目已更新"
       },
       "created": "比赛已创建",
+      "divisions": {
+        "created": "分组已创建",
+        "deleted": "分组已删除",
+        "invite_copied": "邀请码已复制到剪贴板",
+        "updated": "分组已更新"
+      },
       "info": {
-        "accept_count_updated": "解题数量已刷新",
         "deleted": "比赛已删除",
         "info_updated": "比赛信息已更新",
         "poster": {
@@ -402,7 +491,8 @@
           "uploaded": "海报上传成功",
           "uploading": "正在上传海报..."
         },
-        "public_key_copied": "公钥已复制到剪贴板"
+        "public_key_copied": "公钥已复制到剪贴板",
+        "scoreboard_flushed": "积分榜缓存已刷新"
       },
       "instances": {
         "created": "实例已创建",
@@ -450,7 +540,7 @@
           }
         }
       },
-      "divisions": "回车添加参赛分组",
+      "divisions": "输入分组名称",
       "participation": {
         "bio": "（无简介）",
         "team": "（无名队伍）"
@@ -486,6 +576,7 @@
   "tab": {
     "games": {
       "challenges": "题目管理",
+      "divisions": "分组管理",
       "index": "比赛管理",
       "info": "信息编辑",
       "notices": "比赛公告",

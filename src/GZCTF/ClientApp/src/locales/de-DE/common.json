@@ -8,6 +8,7 @@
   "button": {
     "copy": "In die Zwischenablage kopieren",
     "reset": "Zurücksetzen",
+    "retry": "Erneut versuchen",
     "select_file": "Datei auswählen",
     "try_again": "Erneut versuchen",
     "uploading": "Wird hochgeladen"
@@ -18,7 +19,12 @@
       "title": "Seite existiert nicht"
     },
     "about": {
-      "slogan": "Hacke aus Spaß, nicht für Profit"
+      "contributors": "Mitwirkende",
+      "documentation": "Offizielle Dokumentation",
+      "repository": "GitHub-Repository",
+      "resources": "Ressourcen",
+      "slogan": "Hacke aus Spaß, nicht für Profit",
+      "version": "Version"
     },
     "color": {
       "custom": {
@@ -73,6 +79,11 @@
     "check_input": "Bitte überprüfen Sie Ihre Eingabe",
     "empty": "Inhalt darf nicht leer sein",
     "encountered": "Ein Fehler ist aufgetreten",
+    "encryption_failed": {
+      "need_upgrade": "Bitte auf Chrome 133+ / Firefox 130+ / Safari 17+ aktualisieren und erneut versuchen",
+      "not_secure_contexts": "Bitte verwenden Sie HTTPS, um die Web Crypto API zu aktivieren",
+      "title": "Datenverschlüsselung fehlgeschlagen"
+    },
     "file_invalid": {
       "message": "Bitte überprüfen Sie das Dateiformat und die Größe",
       "title": "Datei konnte nicht geladen werden"
@@ -88,7 +99,7 @@
     "unknown": "Unbekannter Fehler"
   },
   "label": {
-    "challenge": "Challenge",
+    "challenge": "Herausf.",
     "flag": "Flagge",
     "game": "Spiel",
     "ip": "IP",
@@ -124,6 +135,6 @@
   },
   "title": {
     "404": "The Nowhere",
-    "about": "About"
+    "about": "Über"
   }
 }

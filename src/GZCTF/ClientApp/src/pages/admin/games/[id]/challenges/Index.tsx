@@ -10,7 +10,7 @@ import { BloodBonusModel } from '@Components/admin/BloodBonusModel'
 import { ChallengeCreateModal } from '@Components/admin/ChallengeCreateModal'
 import { ChallengeEditCard } from '@Components/admin/ChallengeEditCard'
 import { WithGameEditTab } from '@Components/admin/WithGameEditTab'
-import { showErrorNotification } from '@Utils/ApiHelper'
+import { showErrorMsg } from '@Utils/Shared'
 import { ChallengeCategoryItem, ChallengeCategoryList, useChallengeCategoryLabelMap } from '@Utils/Shared'
 import { useEditChallenges } from '@Hooks/useEdit'
 import api, { ChallengeInfoModel, ChallengeCategory } from '@Api'
@@ -63,27 +63,27 @@ const GameChallengeEdit: FC = () => {
       })
       mutate(challenges?.map((c) => (c.id === challenge.id ? { ...c, isEnabled: !challenge.isEnabled } : c)))
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
   }
 
-  const onUpdateAcceptCount = async () => {
+  const onFlushScoreboard = async () => {
     if (!numId) return
 
     setDisabled(true)
 
     try {
-      await api.edit.editUpdateGameChallengesAcceptedCount(numId)
+      await api.edit.editFlushScoreboardCache(numId)
       showNotification({
         color: 'teal',
-        message: t('admin.notification.games.info.accept_count_updated'),
+        message: t('admin.notification.games.info.scoreboard_flushed'),
         icon: <Icon path={mdiCheck} size={1} />,
       })
       mutate()
-    } catch {
-      showErrorNotification(t('common.error.try_later'), t)
+    } catch (e) {
+      showErrorMsg(e, t)
     } finally {
       setDisabled(false)
     }
@@ -110,8 +110,8 @@ const GameChallengeEdit: FC = () => {
             })}
           />
           <Group justify="right">
-            <Button leftSection={<Icon path={mdiRefresh} size={1} />} disabled={disabled} onClick={onUpdateAcceptCount}>
-              {t('admin.button.challenges.update_accept_count')}
+            <Button leftSection={<Icon path={mdiRefresh} size={1} />} disabled={disabled} onClick={onFlushScoreboard}>
+              {t('admin.button.challenges.flush_scoreboard')}
             </Button>
             <Button leftSection={<Icon path={mdiHexagonSlice6} size={1} />} onClick={() => setBonusOpened(true)}>
               {t('admin.button.challenges.bonus')}

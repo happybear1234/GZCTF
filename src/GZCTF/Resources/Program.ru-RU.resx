@@ -395,6 +395,12 @@
   <data name="CronJob_Stopped" xml:space="preserve">
     <value>Cron-задание остановлено</value>
   </data>
+  <data name="CronJob_ExecuteFailed" xml:space="preserve">
+    <value>Не удалось выполнить задачу cron {0}: {1}</value>
+  </data>
+  <data name="CronJob_LaunchedWatchDog" xml:space="preserve">
+    <value>Другой инстанс содержит задачи cron, запущен WatchDog.</value>
+  </data>
   <data name="Database_ConnectionFailed" xml:space="preserve">
     <value>Не удалось подключиться к базе данных ({0}), пожалуйста, проверьте строку подключения к базе данных</value>
   </data>
@@ -914,6 +920,9 @@
   <data name="Challenge_UseAssetsApiForDynamic" xml:space="preserve">
     <value>Используйте assets API для загрузки вложений</value>
   </data>
+  <data name="Challenge_SubmissionLimitExceeded" xml:space="preserve">
+    <value>Лимит отправок достигнут</value>
+  </data>
   <data name="Container_AddressResolveFailed" xml:space="preserve">
     <value>Не удалось разобрать адрес контейнера</value>
   </data>
@@ -989,8 +998,8 @@
   <data name="Team_MemberRemoved" xml:space="preserve">
     <value>{0} выгнан из команды {1}</value>
   </data>
-  <data name="Team_MultipleCreationNotAllowed" xml:space="preserve">
-    <value>Нельзя создать больше одной команды</value>
+  <data name="Team_ExceededCreationLimit" xml:space="preserve">
+    <value>Превышен лимит собственных команд</value>
   </data>
   <data name="Team_NameEmpty" xml:space="preserve">
     <value>Название команды не может быть пустым</value>
@@ -1008,7 +1017,7 @@
     <value>Указанный пользователь не найден</value>
   </data>
   <data name="Team_NewCaptainTeamTooMany" xml:space="preserve">
-    <value>У нового капитана слишком много собственных команд</value>
+    <value>Новый капитан владеет максимальным количеством команд</value>
   </data>
   <data name="Team_UserJoined" xml:space="preserve">
     <value>Вступил в команду {0}</value>
@@ -1045,5 +1054,14 @@
   </data>
   <data name="Init_StorageInitFailed" xml:space="preserve">
     <value>Ошибка инициализации поставщика хранилища: {0}</value>
+  </data>
+  <data name="Division_NotFound" xml:space="preserve">
+    <value>Дивизион не найден</value>
+  </data>
+  <data name="Challenge_SubmissionNoPermission" xml:space="preserve">
+    <value>Нет прав для отправки флагов</value>
+  </data>
+  <data name="Challenge_DeadlinePassed" xml:space="preserve">
+    <value>Срок сдачи этого задания истёк</value>
   </data>
 </root>

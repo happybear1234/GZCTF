@@ -22,6 +22,7 @@
         "delete": "삭제",
         "save": "템플릿 저장"
       },
+      "flush_scoreboard": "스코어보드 새로고침",
       "hint": {
         "add": "힌트 추가"
       },
@@ -32,8 +33,11 @@
       "test_container": {
         "create": "생성",
         "destroy": "삭제"
-      },
-      "update_accept_count": "문제 풀이 수 업데이트"
+      }
+    },
+    "divisions": {
+      "edit": "디비전을 편집",
+      "new": "새 디비전"
     },
     "games": {
       "challenges": {
@@ -90,6 +94,10 @@
           "description": "모든 동적 첨부 파일은 이 파일 이름으로 다운로드됩니다",
           "label": "전역 첨부 파일 이름"
         },
+        "blood_bonus": {
+          "description": "이 문제의 blood 보너스를 활성화합니다",
+          "label": "Blood 보너스"
+        },
         "bonus": {
           "description": "Triple Blood Bonus는 문제을 해결한 첫 세 팀에게 추가로 주어지는 점수를 의미합니다. 각 팀은 문제의 현재 점수를 기준으로 보너스를 받을 수 있습니다. 이 보너스는 고정된 비율로 팀의 점수에 추가됩니다.",
           "first_blood": "First Blood 보상 (%)",
@@ -102,14 +110,14 @@
           "description": "0.1 CPU 코어 개수",
           "label": "CPU 제한 (단위: 0.1 CPU)"
         },
+        "deadline": {
+          "label": "마감 시간",
+          "placeholder": "마감 없음"
+        },
         "delete": "{{name}} 챌린지를 삭제하시겠습니까?",
         "description": "설명",
         "difficulty": "난이도",
         "disable": "{{name}} 챌린지를 비활성화 하시겠습니까?",
-        "blood_bonus": {
-          "description": "이 문제의 blood 보너스를 활성화합니다",
-          "label": "Blood 보너스"
-        },
         "empty": {
           "description": "우측 상단을 클릭하여 첫 챌린지를 생성하세요",
           "title": "앗! 아직 이 게임에는 챌린지가 없어요."
@@ -155,6 +163,11 @@
           "description": "저장소 (이미지 포함)",
           "label": "저장소 제한 (MB)"
         },
+        "submission_limit": {
+          "description": "0 = 무제한",
+          "label": "최대 시도 횟수",
+          "placeholder": "무제한"
+        },
         "title": "제목",
         "traffic_capture": {
           "description": "팀이 문제를 해결했을 때 트래픽을 캡처합니다. 플랫폼 프록시가 설정되어 있어야 합니다.",
@@ -164,6 +177,71 @@
           "description": "생성된 이후 변경할 수 없습니다.",
           "label": "분야"
         }
+      },
+      "divisions": {
+        "default_permission_label": "기본 권한",
+        "delete_confirm": "디비전 {{name}}을(를) 삭제할까요?",
+        "empty": {
+          "description": "새 디비전을 눌러 첫 디비전을 생성하세요",
+          "title": "아직 디비전이 없습니다"
+        },
+        "form": {
+          "challenge_overrides": {
+            "description": "권한을 재정의할 챌린지를 선택하세요",
+            "label": "챌린지 권한 재정의",
+            "placeholder": "재정의할 챌린지를 검색"
+          },
+          "default_permissions": {
+            "description": "이 디비전에 속한 팀에 기본으로 적용될 권한",
+            "label": "기본 권한"
+          },
+          "invite_code": {
+            "description": "게임 수준의 초대 코드를 덮어씁니다",
+            "label": "초대 코드"
+          },
+          "name": {
+            "description": "디비전의 이름입니다.",
+            "label": "디비전 이름"
+          }
+        },
+        "no_permission": "부여된 권한이 없습니다",
+        "override_label": "챌린지 권한 재정의",
+        "permissions": {
+          "affect_dynamic_score": {
+            "description": "동적 점수 계산에 영향",
+            "label": "동적 점수 영향"
+          },
+          "all": "모든 권한",
+          "get_blood": {
+            "description": "선혈 보너스를 받아 점수를 얻을 수 있도록 허용",
+            "label": "선혈 보너스"
+          },
+          "get_score": {
+            "description": "챌린지로 점수를 획득할 수 있도록 허용",
+            "label": "점수 획득"
+          },
+          "join_game": {
+            "description": "이 디비전의 사용자가 게임에 참여하도록 허용",
+            "label": "게임 참여"
+          },
+          "rank_overall": {
+            "description": "전체 순위표에 표시되도록 허용",
+            "label": "전체 순위"
+          },
+          "require_review": {
+            "description": "팀 등록 시 수동 승인 필요",
+            "label": "승인 필요"
+          },
+          "submit_flags": {
+            "description": "플래그 제출을 허용",
+            "label": "플래그 제출"
+          },
+          "view_challenge": {
+            "description": "챌린지 설명을 볼 수 있도록 허용",
+            "label": "챌린지 보기"
+          }
+        },
+        "unknown_challenge": "챌린지 #{{id}}"
       },
       "info": {
         "accept_without_review": {
@@ -230,6 +308,7 @@
         },
         "participation": {
           "joined": "참가됨",
+          "no_division": "디비전 없음",
           "not_joined": "가입되지 않음",
           "stats": "{{count}}/{{total}} 가입함",
           "update": "팀의 상태를 \"{{status}}\"로 변경하시겠습니까?"
@@ -296,6 +375,11 @@
         "title": "컨테이너 정책"
       },
       "platform": {
+        "api_encryption": {
+          "description": "일부 API에서 민감한 데이터 암호화",
+          "label": "API 암호화 활성화",
+          "not_available": "Web Crypto API를 사용할 수 없음"
+        },
         "color": {
           "description": "플랫폼 색상 지정",
           "label": "플랫폼 색상"
@@ -393,8 +477,13 @@
         "updated": "문제가 업데이트 되었습니다."
       },
       "created": "게임이 생성되었습니다.",
+      "divisions": {
+        "created": "디비전이 생성되었습니다",
+        "deleted": "디비전이 삭제되었습니다",
+        "invite_copied": "초대 코드가 클립보드에 복사되었습니다",
+        "updated": "디비전이 업데이트되었습니다"
+      },
       "info": {
-        "accept_count_updated": "문제 풀이 수가 업데이트 되었습니다.",
         "deleted": "게임이 삭제되었습니다",
         "info_updated": "게임이 업데이트 되었습니다.",
         "poster": {
@@ -402,7 +491,8 @@
           "uploaded": "포스터가 업로드되었습니다.",
           "uploading": "포스터 업로드 중..."
         },
-        "public_key_copied": "공개키가 클립보드에 복사되었습니다."
+        "public_key_copied": "공개키가 클립보드에 복사되었습니다.",
+        "scoreboard_flushed": "스코어보드 캐시를 초기화했습니다."
       },
       "instances": {
         "created": "인스턴스가 생성되었습니다.",
@@ -450,7 +540,7 @@
           }
         }
       },
-      "divisions": "부문을 추가하시려면 입력하세요.",
+      "divisions": "디비전 이름 입력",
       "participation": {
         "bio": "(이력 없음)",
         "team": "(이름 없음)"
@@ -486,6 +576,7 @@
   "tab": {
     "games": {
       "challenges": "문제",
+      "divisions": "디비전",
       "index": "게임",
       "info": "정보",
       "notices": "공지사항",

@@ -5,13 +5,6 @@ namespace GZCTF.Models.Request.Admin;
 /// </summary>
 public class ParticipationEditModel
 {
-    public ParticipationEditModel() { }
-
-    public ParticipationEditModel(ParticipationStatus status)
-    {
-        Status = status;
-    }
-
     /// <summary>
     /// Participation Status
     /// </summary>
@@ -20,5 +13,5 @@ public class ParticipationEditModel
     /// <summary>
     /// The division of the participated team
     /// </summary>
-    public string? Division { get; set; }
+    public int? DivisionId { get; set; }
 }

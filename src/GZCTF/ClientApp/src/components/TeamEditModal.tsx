@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Avatar,
+  Badge,
   Box,
   Button,
   Center,
@@ -16,7 +17,6 @@ import {
   Textarea,
   TextInput,
   Tooltip,
-  useMantineTheme,
 } from '@mantine/core'
 import { Dropzone } from '@mantine/dropzone'
 import { useClipboard } from '@mantine/hooks'
@@ -26,10 +26,11 @@ import { mdiCheck, mdiClose, mdiRefresh, mdiStar } from '@mdi/js'
 import { Icon } from '@mdi/react'
 import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { showErrorNotification, tryGetErrorMsg } from '@Utils/ApiHelper'
+import { showErrorMsg, tryGetErrorMsg } from '@Utils/Shared'
 import { IMAGE_MIME_TYPES } from '@Utils/Shared'
 import api, { TeamInfoModel, TeamUserInfoModel } from '@Api'
 import misc from '@Styles/Misc.module.css'
+import styles from '@Styles/TeamEditModal.module.css'
 
 interface TeamEditModalProps extends ModalProps {
   team: TeamInfoModel | null
@@ -45,29 +46,52 @@ interface TeamMemberInfoProps {
 
 const TeamMemberInfo: FC<TeamMemberInfoProps> = (props) => {
   const { user, isCaptain, onKick, onTransferCaptain } = props
-  const theme = useMantineTheme()
   const [showBtns, setShowBtns] = useState(false)
 
   const { t } = useTranslation()
 
   return (
-    <Group justify="space-between" onMouseEnter={() => setShowBtns(true)} onMouseLeave={() => setShowBtns(false)}>
+    <Group
+      justify="space-between"
+      gap={2}
+      p="xs"
+      className={styles.teamMember}
+      onMouseEnter={() => setShowBtns(true)}
+      onMouseLeave={() => setShowBtns(false)}
+      onClick={() => setShowBtns(!showBtns)}
+    >
       <Group justify="left">
-        <Avatar alt="avatar" src={user.avatar} radius="xl">
+        <Avatar alt="avatar" src={user.avatar} radius="xl" size="md">
           {user.userName?.slice(0, 1) ?? 'U'}
         </Avatar>
-        <Text fw={500}>{user.userName}</Text>
+        <Text fw={500} size="sm">
+          {user.userName}
+        </Text>
       </Group>
       {isCaptain && showBtns && (
         <Group gap="xs" justify="right">
           <Tooltip label={t('team.label.transfer')}>
-            <ActionIcon variant="transparent" onClick={() => onTransferCaptain(user)}>
-              <Icon path={mdiStar} size={1} color={theme.colors.yellow[4]} />
+            <ActionIcon
+              variant="light"
+              color="yellow"
+              onClick={(e) => {
+                e.stopPropagation()
+                onTransferCaptain(user)
+              }}
+            >
+              <Icon path={mdiStar} size={0.8} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label={t('team.label.kick')}>
-            <ActionIcon variant="transparent" onClick={() => onKick(user)}>
-              <Icon path={mdiClose} size={1} color={theme.colors.alert[4]} />
+            <ActionIcon
+              variant="light"
+              color="red"
+              onClick={(e) => {
+                e.stopPropagation()
+                onKick(user)
+              }}
+            >
+              <Icon path={mdiClose} size={0.8} />
             </ActionIcon>
           </Tooltip>
         </Group>
@@ -88,7 +112,6 @@ export const TeamEditModal: FC<TeamEditModalProps> = (props) => {
   const [disabled, setDisabled] = useState(false)
   const { data: teams, mutate: mutateTeams } = api.team.useTeamGetTeamsInfo()
 
-  const theme = useMantineTheme()
   const clipboard = useClipboard()
   const captain = teamInfo?.members?.filter((x) => x.captain)[0]
   const crew = teamInfo?.members?.filter((x) => !x.captain)
@@ -131,7 +154,7 @@ export const TeamEditModal: FC<TeamEditModalProps> = (props) => {
       setTeamInfo(null)
       props.onClose()
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     }
   }
 
@@ -154,7 +177,7 @@ export const TeamEditModal: FC<TeamEditModalProps> = (props) => {
       )
       props.onClose()
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     }
   }
 
@@ -178,7 +201,7 @@ export const TeamEditModal: FC<TeamEditModalProps> = (props) => {
         }
       )
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     }
   }
 
@@ -200,7 +223,7 @@ export const TeamEditModal: FC<TeamEditModalProps> = (props) => {
         }
       )
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     }
   }
 
@@ -216,7 +239,7 @@ export const TeamEditModal: FC<TeamEditModalProps> = (props) => {
         icon: <Icon path={mdiCheck} size={1} />,
       })
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     }
   }
 
@@ -286,7 +309,7 @@ export const TeamEditModal: FC<TeamEditModalProps> = (props) => {
         }
       )
     } catch (e) {
-      showErrorNotification(e, t)
+      showErrorMsg(e, t)
     }
   }
 
@@ -298,7 +321,7 @@ export const TeamEditModal: FC<TeamEditModalProps> = (props) => {
         props.onClose()
       }}
     >
-      <Stack gap="lg">
+      <Stack gap="sm">
         {/* Team Info */}
         <Grid grow>
           <Grid.Col span={8}>
@@ -330,7 +353,9 @@ export const TeamEditModal: FC<TeamEditModalProps> = (props) => {
           <PasswordInput
             label={
               <Group gap={3}>
-                <Text size="sm">{t('team.label.invite_code')}</Text>
+                <Text fw={500} size="sm">
+                  {t('team.label.invite_code')}
+                </Text>
                 <ActionIcon size="sm" onClick={onRefreshInviteCode}>
                   <Icon path={mdiRefresh} size={1} />
                 </ActionIcon>
@@ -360,18 +385,24 @@ export const TeamEditModal: FC<TeamEditModalProps> = (props) => {
           maxRows={4}
           onChange={(event) => setTeamInfo({ ...teamInfo, bio: event.target.value })}
         />
-        <Text size="sm">{t('team.label.members')}</Text>
-        <ScrollArea h={140} offsetScrollbars>
+        <Text fw={500} size="sm">
+          {t('team.label.members')}
+        </Text>
+        <ScrollArea h={210} offsetScrollbars>
           <Stack gap="xs">
             {captain && (
-              <Group justify="space-between">
+              <Group justify="space-between" p="xs" className={styles.captainGroup}>
                 <Group justify="left">
-                  <Avatar alt="avatar" src={captain.avatar} radius="xl">
+                  <Avatar alt="avatar" src={captain.avatar} radius="xl" size="md">
                     {captain.userName?.slice(0, 1) ?? 'C'}
                   </Avatar>
-                  <Text fw={500}>{captain.userName}</Text>
+                  <Text fw={500} size="sm">
+                    {captain.userName}
+                  </Text>
                 </Group>
-                <Icon path={mdiStar} size={1} color={theme.colors.yellow[4]} />
+                <Badge color="orange" leftSection={<Icon path={mdiStar} size={0.6} />}>
+                  {t('team.content.role.captain')}
+                </Badge>
               </Group>
             )}
             {crew &&

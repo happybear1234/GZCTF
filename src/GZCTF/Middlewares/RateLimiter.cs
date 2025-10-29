@@ -26,6 +26,11 @@ public static class RateLimiter
         Register,
 
         /// <summary>
+        /// Database query limit
+        /// </summary>
+        Query,
+
+        /// <summary>
         /// Container operation limit
         /// </summary>
         Container,
@@ -59,7 +64,7 @@ public static class RateLimiter
                         SegmentsPerWindow = 6
                     });
 
-            IPAddress? address = context.Connection.RemoteIpAddress;
+            var address = context.Connection.RemoteIpAddress;
 
             if (address is null || IPAddress.IsLoopback(address))
                 return RateLimitPartition.GetNoLimiter(IPAddress.Loopback.ToString());
@@ -79,10 +84,11 @@ public static class RateLimiter
             context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
             context.HttpContext.Response.ContentType = MediaTypeNames.Application.Json;
 
-            var localizer = context.HttpContext.RequestServices.GetRequiredService<IStringLocalizer<Program>>();
+            var localizer =
+                context.HttpContext.RequestServices.GetRequiredService<IStringLocalizer<Program>>();
             var afterSec = (int)TimeSpan.FromMinutes(1).TotalSeconds;
 
-            if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out TimeSpan retryAfter))
+            if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
                 afterSec = (int)retryAfter.TotalSeconds;
 
             context.HttpContext.Response.Headers.RetryAfter = afterSec.ToString(NumberFormatInfo.InvariantInfo);
@@ -103,6 +109,12 @@ public static class RateLimiter
             o.Window = TimeSpan.FromSeconds(150);
             o.QueueProcessingOrder = QueueProcessingOrder.NewestFirst;
             o.SegmentsPerWindow = 5;
+        });
+        options.AddTokenBucketLimiter(nameof(LimitPolicy.Query), o =>
+        {
+            o.TokenLimit = 100;
+            o.TokensPerPeriod = 10;
+            o.ReplenishmentPeriod = TimeSpan.FromSeconds(10);
         });
         options.AddTokenBucketLimiter(nameof(LimitPolicy.PowChallenge), o =>
         {

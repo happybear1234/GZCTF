@@ -4,10 +4,6 @@ import { Icon } from '@mdi/react'
 import { AxiosError, AxiosResponse } from 'axios'
 import { ContentType } from '@Api'
 
-export const tryGetErrorMsg = (err: any, t: (key: string) => string) => {
-  return err?.response?.data?.title ?? err?.title ?? err ?? t('common.error.unknown')
-}
-
 export const handleAxiosError = async (err: unknown) => {
   if (err instanceof AxiosError) {
     if (err.response?.data instanceof Blob) {
@@ -90,24 +86,4 @@ export const downloadBlob = async (
   } finally {
     setDisabled(false)
   }
-}
-
-export const showErrorNotification = (err: any, t: (key: string) => string) => {
-  if (err?.response?.status === 429) {
-    showNotification({
-      color: 'red',
-      title: t('common.error.try_later'),
-      message: tryGetErrorMsg(err, t),
-      icon: <Icon path={mdiClose} size={1} />,
-    })
-    return
-  }
-
-  console.warn(err)
-  showNotification({
-    color: 'red',
-    title: t('common.error.encountered'),
-    message: tryGetErrorMsg(err, t),
-    icon: <Icon path={mdiClose} size={1} />,
-  })
 }

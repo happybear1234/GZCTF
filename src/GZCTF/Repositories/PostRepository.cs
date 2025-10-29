@@ -1,13 +1,11 @@
-﻿using GZCTF.Extensions;
-using GZCTF.Repositories.Interface;
+﻿using GZCTF.Repositories.Interface;
 using GZCTF.Services.Cache;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Distributed;
 
 namespace GZCTF.Repositories;
 
 public class PostRepository(
-    IDistributedCache cache,
+    CacheHelper cacheHelper,
     ILogger<PostRepository> logger,
     AppDbContext context) : RepositoryBase(context), IPostRepository
 {
@@ -19,7 +17,7 @@ public class PostRepository(
         await Context.AddAsync(post, token);
         await SaveAsync(token);
 
-        await cache.RemoveAsync(CacheKey.Posts, token);
+        await cacheHelper.RemoveAsync(CacheKey.Posts, token);
 
         return post;
     }
@@ -28,22 +26,23 @@ public class PostRepository(
         Context.Posts.FirstOrDefaultAsync(p => p.Id == id, token);
 
     public async Task<Post?> GetPostByIdFromCache(string id, CancellationToken token = default) =>
-        (await GetPosts(token)).FirstOrDefault(p => p.Id == id);
+        (await GetPosts(token)).Data.FirstOrDefault(p => p.Id == id);
 
-    public Task<Post[]> GetPosts(CancellationToken token = default) =>
-        cache.GetOrCreateAsync(logger, CacheKey.Posts, entry =>
+    public Task<DataWithModifiedTime<Post[]>> GetPosts(CancellationToken token = default) =>
+        cacheHelper.GetOrCreateAsync(logger, CacheKey.Posts, async entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(12);
-            return Context.Posts.AsNoTracking().OrderByDescending(n => n.IsPinned)
+            entry.SlidingExpiration = TimeSpan.FromHours(12);
+            var data = await Context.Posts.AsNoTracking().OrderByDescending(n => n.IsPinned)
                 .ThenByDescending(n => n.UpdateTimeUtc).ToArrayAsync(token);
-        }, token);
+            return new DataWithModifiedTime<Post[]>(data, DateTimeOffset.UtcNow);
+        }, token: token);
 
     public async Task RemovePost(Post post, CancellationToken token = default)
     {
         Context.Remove(post);
         await SaveAsync(token);
 
-        await cache.RemoveAsync(CacheKey.Posts, token);
+        await cacheHelper.RemoveAsync(CacheKey.Posts, token);
     }
 
     public async Task UpdatePost(Post post, CancellationToken token = default)
@@ -51,6 +50,6 @@ public class PostRepository(
         Context.Update(post);
         await SaveAsync(token);
 
-        await cache.RemoveAsync(CacheKey.Posts, token);
+        await cacheHelper.RemoveAsync(CacheKey.Posts, token);
     }
 }

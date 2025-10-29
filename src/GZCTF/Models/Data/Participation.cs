@@ -29,11 +29,6 @@ public class Participation
     public string Token { get; set; } = string.Empty;
 
     /// <summary>
-    /// Division the team belongs to
-    /// </summary>
-    public string? Division { get; set; }
-
-    /// <summary>
     /// Team writeup
     /// </summary>
     public LocalFile? Writeup { get; set; }
@@ -61,6 +56,11 @@ public class Participation
     public List<Submission> Submissions { get; set; } = [];
 
     /// <summary>
+    /// First solves recorded for this participation.
+    /// </summary>
+    public List<FirstSolve> FirstSolves { get; set; } = [];
+
+    /// <summary>
     /// Game ID
     /// </summary>
     [Required]
@@ -69,7 +69,7 @@ public class Participation
     /// <summary>
     /// Game
     /// </summary>
-    public Game Game { get; set; } = default!;
+    public Game Game { get; set; } = null!;
 
     /// <summary>
     /// Team ID
@@ -80,7 +80,17 @@ public class Participation
     /// <summary>
     /// Team
     /// </summary>
-    public Team Team { get; set; } = default!;
+    public Team Team { get; set; } = null!;
+
+    /// <summary>
+    /// Division ID
+    /// </summary>
+    public int? DivisionId { get; set; }
+
+    /// <summary>
+    /// Division this participation belongs to
+    /// </summary>
+    public Division? Division { get; set; }
 
     #endregion Db Relationship
 }

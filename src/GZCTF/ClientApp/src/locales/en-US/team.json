@@ -8,7 +8,11 @@
     "save": "Update Info"
   },
   "content": {
-    "create": "You can create a team and invite others to join. Each player can only create one team.",
+    "create": "You can create a team and invite others to join.",
+    "disallow_create": {
+      "content": "You have reached the maximum number of teams you can have.<br/>Please disband an existing team to create a new one.",
+      "title": "You've exceeded the limit"
+    },
     "disband": {
       "confirm": {
         "message": "Are you sure you want to disband team \"{{team}}\"?",
@@ -28,9 +32,9 @@
         "title": "Confirm Quit"
       }
     },
-    "no_create": {
-      "content": "Each player can only create one team.<br/>You can disband the existed team and create a new one.",
-      "title": "You've created a team"
+    "no_team": {
+      "hint": "Create a team or join one to get started",
+      "title": "No team yet"
     },
     "role": {
       "captain": "Captain",

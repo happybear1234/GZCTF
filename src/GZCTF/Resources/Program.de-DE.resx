@@ -406,6 +406,12 @@
   <data name="CronJob_Stopped" xml:space="preserve">
     <value>Cron-Job wurde gestoppt</value>
   </data>
+  <data name="CronJob_ExecuteFailed" xml:space="preserve">
+    <value>Ausführung des Cronjobs {0} fehlgeschlagen: {1}</value>
+  </data>
+  <data name="CronJob_LaunchedWatchDog" xml:space="preserve">
+    <value>Ein anderes Exemplar hält die Cronjobs, lassen Sie uns den Wachhund laufen lassen.</value>
+  </data>
   <data name="Database_ConnectionFailed" xml:space="preserve">
     <value>Fehler beim Verbinden mit der Datenbank ({0}), bitte prüfen Sie die Datenbank-Verbindungszeichenfolge</value>
   </data>
@@ -881,7 +887,7 @@
     <value>Team nicht geladen</value>
   </data>
   <data name="Scoreboard_Title" xml:space="preserve">
-    <value>Scoreboard</value>
+    <value>Ergebnistafel</value>
   </data>
   <data name="Server_Exited" xml:space="preserve">
     <value>Server beendet</value>
@@ -933,6 +939,9 @@
   </data>
   <data name="Challenge_UseAssetsApiForDynamic" xml:space="preserve">
     <value>Verwenden Sie die Assets-API, um Anhänge hochzuladen</value>
+  </data>
+  <data name="Challenge_SubmissionLimitExceeded" xml:space="preserve">
+    <value>Einreichungslimit erreicht</value>
   </data>
   <data name="Container_AddressResolveFailed" xml:space="preserve">
     <value>Containeradresse konnte nicht geparst werden</value>
@@ -1009,8 +1018,8 @@
   <data name="Team_MemberRemoved" xml:space="preserve">
     <value>{0} aus Team {1} entfernen</value>
   </data>
-  <data name="Team_MultipleCreationNotAllowed" xml:space="preserve">
-    <value>Nicht erlaubt, mehr als ein Team zu erstellen</value>
+  <data name="Team_ExceededCreationLimit" xml:space="preserve">
+    <value>Das Limit für erstellte Teams wurde überschritten</value>
   </data>
   <data name="Team_NameEmpty" xml:space="preserve">
     <value>Teamname darf nicht leer sein</value>
@@ -1028,7 +1037,7 @@
     <value>Der übertragene Benutzer existiert nicht</value>
   </data>
   <data name="Team_NewCaptainTeamTooMany" xml:space="preserve">
-    <value>Zu viele übergebene Teams</value>
+    <value>Der neue Kapitän hat zu viele Teams</value>
   </data>
   <data name="Team_UserJoined" xml:space="preserve">
     <value>Team {0} beitreten</value>
@@ -1065,5 +1074,14 @@
   </data>
   <data name="Init_StorageInitFailed" xml:space="preserve">
     <value>Fehler bei der Initialisierung des Speicheranbieters: {0}</value>
+  </data>
+  <data name="Division_NotFound" xml:space="preserve">
+    <value>Division nicht gefunden</value>
+  </data>
+  <data name="Challenge_SubmissionNoPermission" xml:space="preserve">
+    <value>Keine Berechtigung, Flaggen einzureichen</value>
+  </data>
+  <data name="Challenge_DeadlinePassed" xml:space="preserve">
+    <value>Die Frist für diese Herausforderung ist abgelaufen</value>
   </data>
 </root>

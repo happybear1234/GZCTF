@@ -59,6 +59,16 @@ public enum RegisterStatus : byte
 public enum TaskStatus : sbyte
 {
     /// <summary>
+    /// System is unhealthy
+    /// </summary>
+    Unhealthy = -3,
+
+    /// <summary>
+    /// System is in a degraded state
+    /// </summary>
+    Degraded = -2,
+
+    /// <summary>
     /// Task is in progress
     /// </summary>
     Pending = -1,
@@ -351,7 +361,7 @@ public enum ChallengeCategory : byte
     Pentest = 11,
 
     // ReSharper disable once InconsistentNaming
-    OSINT = 12,
+    OSINT = 12
 }
 
 /// <summary>
@@ -368,6 +378,103 @@ public enum Difficulty : byte
     Hard = 5,
     Expert = 6,
     Insane = 7
+}
+
+/// <summary>
+/// Game participant permission
+/// </summary>
+[Flags]
+[JsonConverter(typeof(JsonNumberEnumConverter<GamePermission>))]
+public enum GamePermission
+{
+    /// <summary>
+    /// Join the game
+    /// </summary>
+    /// <remarks>
+    /// Division-level permission only. Controls whether users can join the game through this division.
+    /// Without this permission, the division cannot accept new participants.
+    /// </remarks>
+    JoinGame = 1 << 0,
+
+    /// <summary>
+    /// Can be ranked on the overall scoreboard
+    /// </summary>
+    /// <remarks>
+    /// Division-level permission only. Determines if teams in this division appear on the overall scoreboard rankings.
+    /// Teams without this permission will only have division-specific rankings.
+    /// Use case: Unofficial participants or guest teams that should not compete for overall prizes.
+    /// </remarks>
+    RankOverall = 1 << 1,
+
+    /// <summary>
+    /// Require review before acceptance
+    /// </summary>
+    /// <remarks>
+    /// Division-level permission only. When enabled, participations require manual admin approval (Pending status).
+    /// When disabled, participations are automatically accepted without review (Accepted status).
+    /// Overrides game-level AcceptWithoutReview setting for this specific division.
+    /// Use case: Require review for external registrations while auto-accepting internal teams.
+    /// Note: Permission name is positive (require review) so that All permission defaults to the secure behavior.
+    /// </remarks>
+    RequireReview = 1 << 2,
+
+    /// <summary>
+    /// Can view challenge
+    /// </summary>
+    /// <remarks>
+    /// Challenge-specific permission. Controls access to challenge details, descriptions, and attachments.
+    /// Without this permission, challenges will be hidden from the team.
+    /// </remarks>
+    ViewChallenge = 1 << 8,
+
+    /// <summary>
+    /// Can submit flags
+    /// </summary>
+    /// <remarks>
+    /// Challenge-specific permission. Allows teams to submit flag answers for challenges.
+    /// Can be combined with ViewChallenge but without GetScore for practice/demo scenarios.
+    /// </remarks>
+    SubmitFlags = 1 << 9,
+
+    /// <summary>
+    /// Can be awarded points
+    /// </summary>
+    /// <remarks>
+    /// Challenge-specific permission. Determines if successful flag submissions award points to the team.
+    /// Teams without this permission can submit flags but won't receive any score.
+    /// Use case: Observer teams or late joiners who participate without competing.
+    /// </remarks>
+    GetScore = 1 << 10,
+
+    /// <summary>
+    /// Can earn blood bonuses
+    /// </summary>
+    /// <remarks>
+    /// Challenge-specific permission. Allows teams to receive first/second/third blood bonus points.
+    /// Requires GetScore permission to be effective. Blood bonuses are typically 30%, 20%, and 10% extra points.
+    /// Use case: Restrict blood bonuses to specific divisions while allowing others to score normally.
+    /// </remarks>
+    GetBlood = 1 << 11,
+
+    /// <summary>
+    /// Affects dynamic scoring calculation
+    /// </summary>
+    /// <remarks>
+    /// Challenge-specific permission. Controls whether this team's submissions count toward challenge accept count,
+    /// which influences dynamic score calculation for all teams.
+    /// Independent of GetScore - teams can score without affecting others' challenge values.
+    /// Use case: Allow external participants to score without affecting internal competition's dynamic scoring.
+    /// </remarks>
+    AffectDynamicScore = 1 << 12,
+
+    /// <summary>
+    /// All permissions, including future permissions
+    /// </summary>
+    /// <remarks>
+    /// Special value representing all current and future permissions.
+    /// Use int.MaxValue to ensure compatibility with newly added permission flags.
+    /// </remarks>
+    All = int.MaxValue
 }
 
 /// <summary>

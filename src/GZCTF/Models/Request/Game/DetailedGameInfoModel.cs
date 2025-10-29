@@ -34,7 +34,7 @@ public class DetailedGameInfoModel
     /// <summary>
     /// List of participation divisions
     /// </summary>
-    public HashSet<string>? Divisions { get; set; }
+    public HashSet<DivisionInfo>? Divisions { get; set; }
 
     /// <summary>
     /// Whether an invitation code is required
@@ -66,7 +66,7 @@ public class DetailedGameInfoModel
     /// <summary>
     /// Current registered division
     /// </summary>
-    public string? Division { get; set; }
+    public int? Division { get; set; }
 
     /// <summary>
     /// Team name for participation
@@ -96,15 +96,16 @@ public class DetailedGameInfoModel
     [JsonPropertyName("end")]
     public DateTimeOffset EndTimeUtc { get; set; } = DateTimeOffset.FromUnixTimeSeconds(0);
 
-    public DetailedGameInfoModel WithParticipation(Participation? part)
+    public DetailedGameInfoModel WithParticipation(Participation? part, int teamCount)
     {
+        TeamCount = teamCount;
         Status = part?.Status ?? ParticipationStatus.Unsubmitted;
         TeamName = part?.Team.Name;
-        Division = part?.Division;
+        Division = part?.DivisionId;
         return this;
     }
 
-    internal static DetailedGameInfoModel FromGame(Data.Game game, int count) =>
+    internal static DetailedGameInfoModel FromGame(Data.Game game) =>
         new()
         {
             Id = game.Id,
@@ -113,13 +114,36 @@ public class DetailedGameInfoModel
             Summary = game.Summary,
             Content = game.Content,
             PracticeMode = game.PracticeMode,
-            Divisions = game.Divisions,
+            Divisions =
+                game.Divisions?.Select(d => new DivisionInfo
+                {
+                    Id = d.Id,
+                    Name = d.Name,
+                    InviteCodeRequired = !string.IsNullOrWhiteSpace(d.InviteCode)
+                }).ToHashSet(),
             InviteCodeRequired = !string.IsNullOrWhiteSpace(game.InviteCode),
             WriteupRequired = game.WriteupRequired,
-            TeamCount = count,
             PosterUrl = game.PosterUrl,
             StartTimeUtc = game.StartTimeUtc,
             EndTimeUtc = game.EndTimeUtc,
             TeamMemberCountLimit = game.TeamMemberCountLimit
         };
+}
+
+public class DivisionInfo
+{
+    /// <summary>
+    /// Division ID
+    /// </summary>
+    public int Id { get; set; }
+
+    /// <summary>
+    /// Division name
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Is the division invite code required
+    /// </summary>
+    public bool InviteCodeRequired { get; set; }
 }

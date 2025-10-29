@@ -11,7 +11,11 @@
     "instance": {
       "create": "Crear",
       "destroy": "Destruir",
-      "extend": "Extender"
+      "extend": "Extender",
+      "show": {
+        "original": "Cambiar a dirección original",
+        "proxied": "Cambiar a dirección de proxy local"
+      }
     },
     "submit_flag": "Enviar bandera"
   },
@@ -32,6 +36,17 @@
   },
   "content": {
     "already_solved": "Este desafío ha sido resuelto",
+    "attempts": {
+      "count": "¡Ya has intentado {{count}} veces!",
+      "exhausted": "¡Ups, se agotaron todos los intentos!",
+      "placeholder": "¡Has alcanzado el límite!",
+      "remaining": "{{remaining}} intentos restantes, ¡sigue adelante!"
+    },
+    "deadline": {
+      "expired": "La fecha límite venció a las {{deadline}}, envíos deshabilitados",
+      "label": "Fecha límite",
+      "remaining": "Tiempo restante"
+    },
     "flag_placeholders": [
       "Ser o no ser, esa es la cuestión del flag",
       "No todo lo que reluce es flag",

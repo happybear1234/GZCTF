@@ -11,7 +11,11 @@
     "instance": {
       "create": "Tạo",
       "destroy": "Xóa",
-      "extend": "Gia hạn"
+      "extend": "Gia hạn",
+      "show": {
+        "original": "Chuyển về entry gốc",
+        "proxied": "Chuyển về local proxy entry"
+      }
     },
     "submit_flag": "Nộp cờ"
   },
@@ -32,6 +36,17 @@
   },
   "content": {
     "already_solved": "Thử thách này đã được giải",
+    "attempts": {
+      "count": "Bạn đã thử {{count}} lần rồi!",
+      "exhausted": "Ôi không, tất cả lượt thử đã hết!",
+      "placeholder": "Bạn đã đạt giới hạn!",
+      "remaining": "Còn {{remaining}} lượt thử, cố lên!"
+    },
+    "deadline": {
+      "expired": "Hạn chót đã qua lúc {{deadline}}, không thể nộp bài",
+      "label": "Hạn chót",
+      "remaining": "Thời gian còn lại"
+    },
     "flag_placeholders": [
       "Có hay không, flag là câu hỏi",
       "Không phải tất cả những gì lấp lánh đều là flag",

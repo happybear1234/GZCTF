@@ -22,6 +22,7 @@
         "delete": "Löschen",
         "save": "Vorlage speichern"
       },
+      "flush_scoreboard": "Scoreboard aktualisieren",
       "hint": {
         "add": "Hinweis hinzufügen"
       },
@@ -32,8 +33,11 @@
       "test_container": {
         "create": "Erstellen",
         "destroy": "Zerstören"
-      },
-      "update_accept_count": "AC-Zähler aktualisieren"
+      }
+    },
+    "divisions": {
+      "edit": "Abteilung bearbeiten",
+      "new": "Neue Abteilung"
     },
     "games": {
       "challenges": {
@@ -90,6 +94,10 @@
           "description": "Alle dynamischen Anhänge werden unter diesem Dateinamen heruntergeladen",
           "label": "Globaler Anhangsname"
         },
+        "blood_bonus": {
+          "description": "Blutbonus für diese Herausforderung aktivieren",
+          "label": "Blutbonus"
+        },
         "bonus": {
           "description": "Der Triple-Blut-Bonus bezieht sich auf die zusätzlichen Punkte, die vergeben werden, wenn eine Herausforderung von den ersten drei Teams gelöst wird. Jedes Team kann einen Punktebonus basierend auf den aktuellen Punkten der Herausforderung erhalten. Der Bonus wird in Form eines festen Prozentsatzes zur Punktzahl des Teams hinzugefügt.",
           "first_blood": "First Blood Reward (%)",
@@ -102,14 +110,14 @@
           "description": "Multiplikation von 0,1 CPU-Kern",
           "label": "CPU-Limit (0,1 CPUs)"
         },
+        "deadline": {
+          "label": "Abgabefrist",
+          "placeholder": "Keine Frist"
+        },
         "delete": "Sind Sie sicher, dass Sie die Herausforderung {{name}} löschen möchten?",
         "description": "Beschreibung",
         "difficulty": "Schwierigkeitsgrad",
         "disable": "Sind Sie sicher, dass Sie die Herausforderung {{name}} deaktivieren möchten?",
-        "blood_bonus": {
-          "description": "Blutbonus für diese Herausforderung aktivieren",
-          "label": "Blutbonus"
-        },
         "empty": {
           "description": "Klicken Sie oben rechts, um die erste Herausforderung zu erstellen",
           "title": "Autsch! Dieses Spiel hat noch keine Herausforderung."
@@ -155,15 +163,85 @@
           "description": "Speicher (inklusive Image)",
           "label": "Speicherlimit (MB)"
         },
+        "submission_limit": {
+          "description": "0 = unbegrenzt",
+          "label": "Max. Versuche",
+          "placeholder": "Unbegrenzt"
+        },
         "title": "Titel",
         "traffic_capture": {
           "description": "Erfassen des Traffics, wenn das Team Herausforderungen löst. Plattform-Proxy muss aktiviert sein",
           "label": "Traffic-Erfassung aktivieren"
         },
         "type": {
-          "description": "Kann nach der Erstellung nicht geändert werden",
+          "description": "Nicht änderbar nach Erstellung",
           "label": "Typ"
         }
+      },
+      "divisions": {
+        "default_permission_label": "Standardberechtigungen",
+        "delete_confirm": "Division {{name}} löschen?",
+        "empty": {
+          "description": "Klicken Sie auf Neue Division, um die erste Division zu erstellen",
+          "title": "Noch keine Divisionen"
+        },
+        "form": {
+          "challenge_overrides": {
+            "description": "Wählen Sie Herausforderungen aus, um Berechtigungen anzupassen",
+            "label": "Challenge-Überschreibungen",
+            "placeholder": "Challenges mit Überschreibungen suchen"
+          },
+          "default_permissions": {
+            "description": "Die Standardberechtigungen für Teams in dieser Division",
+            "label": "Standardberechtigungen"
+          },
+          "invite_code": {
+            "description": "Überschreibt den spieleigenen Einladungscode",
+            "label": "Einladungscode"
+          },
+          "name": {
+            "description": "Der Name der Division.",
+            "label": "Name der Division"
+          }
+        },
+        "no_permission": "Keine Berechtigungen zugewiesen",
+        "override_label": "Challenge-Überschreibungen",
+        "permissions": {
+          "affect_dynamic_score": {
+            "description": "Dynamische Punkteberechnung beeinflussen",
+            "label": "Dynamische Punktzahl beeinflussen"
+          },
+          "all": "Alle Berechtigungen",
+          "get_blood": {
+            "description": "Erlaubt Bonuspunkte für Blood-Prämien",
+            "label": "Blood-Belohnungen"
+          },
+          "get_score": {
+            "description": "Erlaubt das Sammeln von Punkten für Herausforderungen",
+            "label": "Punkte erhalten"
+          },
+          "join_game": {
+            "description": "Erlaubt Nutzern dieser Division, dem Spiel beizutreten",
+            "label": "Spiel beitreten"
+          },
+          "rank_overall": {
+            "description": "Erlaubt die Anzeige in der Gesamtrangliste",
+            "label": "Gesamtrangliste"
+          },
+          "require_review": {
+            "description": "Teamregistrierung erfordert manuelle Genehmigung",
+            "label": "Überprüfung erforderlich"
+          },
+          "submit_flags": {
+            "description": "Erlaubt das Einreichen von Flags",
+            "label": "Flags einreichen"
+          },
+          "view_challenge": {
+            "description": "Erlaubt das Anzeigen von Challenge-Beschreibungen",
+            "label": "Challenges ansehen"
+          }
+        },
+        "unknown_challenge": "Herausforderung #{{id}}"
       },
       "info": {
         "accept_without_review": {
@@ -230,6 +308,7 @@
         },
         "participation": {
           "joined": "Beigetreten",
+          "no_division": "Keine Division",
           "not_joined": "Nicht registriert",
           "stats": "{{count}}/{{total}} beigetreten",
           "update": "Status dieses Teams auf „{{status}}“ setzen?"
@@ -296,6 +375,11 @@
         "title": "Container-Richtlinie"
       },
       "platform": {
+        "api_encryption": {
+          "description": "Die Verschlüsselung sensibler Daten in einigen APIs",
+          "label": "API-Verschlüsselung aktivieren",
+          "not_available": "Web-Crypto-API ist nicht verfügbar"
+        },
         "color": {
           "description": "Benutzerdefinierte Farbe für die Plattform",
           "label": "Plattformfarbe"
@@ -393,8 +477,13 @@
         "updated": "Challenge aktualisiert"
       },
       "created": "Spiel erstellt",
+      "divisions": {
+        "created": "Division erstellt",
+        "deleted": "Division gelöscht",
+        "invite_copied": "Einladungscode in die Zwischenablage kopiert",
+        "updated": "Division aktualisiert"
+      },
       "info": {
-        "accept_count_updated": "AC-Zähler aktualisiert",
         "deleted": "Spiel gelöscht",
         "info_updated": "Spiel aktualisiert",
         "poster": {
@@ -402,7 +491,8 @@
           "uploaded": "Poster erfolgreich hochgeladen",
           "uploading": "Poster wird hochgeladen..."
         },
-        "public_key_copied": "Öffentlicher Schlüssel in die Zwischenablage kopiert"
+        "public_key_copied": "Öffentlicher Schlüssel in die Zwischenablage kopiert",
+        "scoreboard_flushed": "Scoreboard-Cache geleert"
       },
       "instances": {
         "created": "Instanz erstellt",
@@ -450,7 +540,7 @@
           }
         }
       },
-      "divisions": "Eingeben, um eine Abteilung hinzuzufügen.",
+      "divisions": "Divisionsnamen eingeben",
       "participation": {
         "bio": "(kein Lebenslauf)",
         "team": "(kein Name)"
@@ -486,6 +576,7 @@
   "tab": {
     "games": {
       "challenges": "Herausf.",
+      "divisions": "Divisionen",
       "index": "Spiele",
       "info": "Informationen",
       "notices": "Mitteilungen",

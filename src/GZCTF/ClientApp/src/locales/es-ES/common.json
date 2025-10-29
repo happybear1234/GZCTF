@@ -1,13 +1,14 @@
 {
   "avatar": {
     "save": "Guardar Avatar",
-    "upload_failed": "No se pudo actualizar el avatar",
+    "upload_failed": "Error al actualizar el avatar",
     "uploaded": "Avatar actualizado",
     "uploading": "Subiendo avatar"
   },
   "button": {
     "copy": "Copiar al Portapapeles",
     "reset": "Restablecer",
+    "retry": "Reintentar",
     "select_file": "Seleccionar Archivo",
     "try_again": "Intentar Nuevamente",
     "uploading": "Subiendo"
@@ -15,10 +16,15 @@
   "content": {
     "404": {
       "text": "Una desolación, ¿por qué está aquí?",
-      "title": "Página no existe"
+      "title": "La página no existe"
     },
     "about": {
-      "slogan": "Hack for fun not for profit"
+      "contributors": "Contribuyentes",
+      "documentation": "Documentación Oficial",
+      "repository": "Repositorio GitHub",
+      "resources": "Recursos",
+      "slogan": "Hackea por diversión, sin ánimo de lucro",
+      "version": "Versión"
     },
     "color": {
       "custom": {
@@ -35,7 +41,7 @@
         "default": "Predeterminado",
         "description": "Selecciona cómo se determina el color base",
         "label": "Proveedor de color del tema",
-        "managed": "Proporcionado por el Administrador"
+        "managed": "Facilitado por el Administrador"
       },
       "title": "Personalizar Color"
     },
@@ -73,12 +79,17 @@
     "check_input": "Por favor revise su entrada",
     "empty": "El contenido no puede estar vacío",
     "encountered": "Ha ocurrido un error",
+    "encryption_failed": {
+      "need_upgrade": "Por favor, actualiza a Chrome 133+ / Firefox 130+ / Safari 17+ e inténtalo de nuevo",
+      "not_secure_contexts": "Por favor, usa HTTPS para habilitar la API Web Crypto",
+      "title": "Falló el cifrado de datos"
+    },
     "file_invalid": {
       "message": "Por favor verifique el formato y el tamaño del archivo",
       "title": "No se pudo cargar el archivo"
     },
     "invalid_username_or_password": "Nombre de usuario o contraseña incorrectos",
-    "no_change": "Parece que no hay cambio",
+    "no_change": "Parece que no hay cambios",
     "param_error": "Parámetro incorrecto, por favor verifique",
     "param_invalid": "Parámetro inválido",
     "param_missing": "Parámetro faltante",
@@ -123,7 +134,7 @@
     }
   },
   "title": {
-    "404": "The Nowhere",
+    "404": "La Nada",
     "about": "Acerca de"
   }
 }

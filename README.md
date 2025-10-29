@@ -9,6 +9,7 @@
 ![version](https://img.shields.io/github/v/release/GZTimeWalker/GZCTF?include_prereleases&label=version)
 ![license](https://img.shields.io/github/license/GZTimeWalker/GZCTF?color=FF5531)
 [![Crowdin](https://badges.crowdin.net/gzctf/localized.svg)](https://crowdin.com/project/gzctf)
+[![codecov](https://codecov.io/gh/GZTimeWalker/GZCTF/branch/develop/graph/badge.svg)](https://codecov.io/gh/GZTimeWalker/GZCTF)
 
 [![Telegram Group](https://img.shields.io/endpoint?color=blue&url=https%3A%2F%2Ftg.sumanjay.workers.dev%2Fgzctf)](https://telegram.dog/gzctf)
 [![QQ Group](https://img.shields.io/badge/QQ%20Group-903244818-blue)](https://jq.qq.com/?_wv=1027&k=muSqhF9x)
@@ -60,7 +61,7 @@ GZ::CTF is an open source CTF platform based on ASP.NET Core.
 - **Teams** score timeline, scoreboard. Teams can be grouped
 - Dynamic container distribution, management, and multiple port mapping methods based on **Docker or K8s**
 - **Real-time** competition notification, competition events and flag submission monitoring, and log monitoring based on SignalR
-- SMTP email verification, malicious registration protection based on Google ReCaptchav3
+- SMTP email verification, malicious registration protection based on Cloudflare Turnstile
 - Ban specific user, three-level user permission management
 - Optional team review, invitation code, registration email restriction
 - Writeup collection, review, and batch download in the platform
@@ -103,6 +104,7 @@ If you are interested in contributing to the translation, please refer to the [C
 ## Demo 🗿
 
 ![index.webp](assets/images/index.webp)
+![game.list.webp](assets/images/game.list.webp)
 ![game.challenges.webp](assets/images/game.challenges.webp)
 ![game.scoreboard.webp](assets/images/game.scoreboard.webp)
 ![admin.settings.webp](assets/images/admin.settings.webp)
@@ -168,6 +170,31 @@ _These list is not in any particular order, and PRs are welcome for additions._
 ## Special Thanks ❤️‍🔥
 
 Thanks to NanoApe, the organizer of THUCTF 2022, for providing sponsorship and conducting Alibaba Cloud public network stress testing. This helped validate the service stability of the GZCTF standalone instance (16c90g) under the pressure of thousands of concurrent requests and 1.34 million requests in three minutes.
+
+## License 📄
+
+GZCTF is dual-licensed:
+
+1.  **Core Source Code**: Licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**. This covers the main part of the project, granting you broad freedoms to use, modify, and distribute. See `LICENSE.txt` for details.
+
+2.  **Restricted Components**: Licensed under the custom **GZCTF Restricted License** (`LicenseRef-GZCTF-Restricted`).
+    - **Usage and Distribution Permitted**: You are free to use and redistribute the components as-is (unmodified), provided that all copyright notices and the license text are preserved.
+    - **Modification and Deletion Prohibited**: You **may not modify, delete, create derivative works of, or reverse-engineer** these components without explicit written permission from the author.
+    - **File List**: The complete list of Restricted Components is defined in the `PROPRIETARY_COMPONENTS.md` file.
+    - **Full License Text**: Please refer to `license/LicenseRef-GZCTF-Restricted.txt` for the detailed terms.
+
+When deploying a **modified version** of GZCTF as a public service, you are required to:
+
+- Retain the original copyright and attribution information in a prominent location, such as the website footer.
+- State the version of GZCTF being used and its license.
+- Provide a link to the original repository and the original license text.
+
+### Trademarks & Brand
+
+- The "GZCTF" / "GZ::CTF" names, logos, and related brand assets are trademarks of the author.
+- Usage is governed by `TRADEMARKS.md`. Descriptive references (e.g., "Forked from GZCTF") are permitted, but no official endorsement should be implied.
+
+See also the `NOTICE` file for consolidated copyright and trademark statements.
 
 ## Stars ✨
 

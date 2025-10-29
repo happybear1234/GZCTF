@@ -1,5 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Buffers;
+using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Threading.Channels;
+using MemoryPack;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IO;
 
 namespace GZCTF.Utils;
 
@@ -12,6 +17,21 @@ public static class ChannelService
         services.AddSingleton(channel.Reader);
         services.AddSingleton(channel.Writer);
     }
+}
+
+internal static class BufferHelper
+{
+    const int DefaultBufferSize = 4096;
+    private static readonly RecyclableMemoryStreamManager MemoryStreamManager = new();
+
+    internal static Stream GetTempStream(long? bufferSize, string? tag = null) =>
+        bufferSize switch
+        {
+            0 => MemoryStreamManager.GetStream(),
+            null => MemoryStreamManager.GetStream(tag, DefaultBufferSize),
+            <= 16 * 1024 * 1024 => MemoryStreamManager.GetStream(tag, (int)bufferSize),
+            _ => File.Create(Path.GetTempFileName(), DefaultBufferSize, FileOptions.DeleteOnClose)
+        };
 }
 
 /// <summary>
@@ -27,7 +47,11 @@ public record TaskResult<TResult>(TaskStatus Status, TResult? Result = default);
 /// </summary>
 /// <param name="Title">Response message</param>
 /// <param name="Status">Status code</param>
-public record RequestResponse(string Title, int Status = StatusCodes.Status400BadRequest);
+public record RequestResponse(string Title, int Status = StatusCodes.Status400BadRequest)
+{
+    internal static IActionResult Result(string title, int status = StatusCodes.Status400BadRequest) =>
+        new JsonResult(new RequestResponse(title, status)) { StatusCode = status };
+}
 
 /// <summary>
 /// Request response
@@ -36,6 +60,15 @@ public record RequestResponse(string Title, int Status = StatusCodes.Status400Ba
 /// <param name="Data">Data</param>
 /// <param name="Status">Status code</param>
 public record RequestResponse<T>(string Title, T Data, int Status = StatusCodes.Status400BadRequest);
+
+/// <summary>
+/// Data with modification time
+/// </summary>
+/// <param name="Data">Data</param>
+/// <param name="LastModifiedTimeUtc">The last modified time</param>
+/// <typeparam name="T"></typeparam>
+[MemoryPackable]
+public partial record DataWithModifiedTime<T>(T Data, DateTimeOffset LastModifiedTimeUtc);
 
 /// <summary>
 /// Answer verification result
@@ -73,10 +106,11 @@ public record ChallengeModel(int Id, string Title, ChallengeCategory Category)
 /// <param name="Team">Team information</param>
 /// <param name="Status">Team participation status</param>
 /// <param name="Division">Team division</param>
-public record ParticipationModel(int Id, TeamModel Team, ParticipationStatus Status, string? Division)
+/// <param name="DivisionId">Team division ID</param>
+public record ParticipationModel(int Id, TeamModel Team, ParticipationStatus Status, string? Division, int? DivisionId)
 {
     internal static ParticipationModel FromParticipation(Participation part) =>
-        new(part.Id, TeamModel.FromTeam(part.Team), part.Status, part.Division);
+        new(part.Id, TeamModel.FromTeam(part.Team), part.Status, part.Division?.Name, part.DivisionId);
 }
 
 /// <summary>
@@ -96,12 +130,68 @@ public class ArrayResponse<T>(T[] array, int? tot = null)
     /// Data length
     /// </summary>
     [Required]
-    public int Length => Data.Length;
+    public int Length
+    {
+        get => Data.Length;
+    }
 
     /// <summary>
     /// Total length
     /// </summary>
     public int Total { get; set; } = tot ?? array.Length;
+}
+
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public class IPAddressFormatter : MemoryPackCustomFormatterAttribute<IPAddress>, IMemoryPackFormatter<IPAddress>
+{
+    public void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, scoped ref IPAddress? value)
+        where TBufferWriter : IBufferWriter<byte>
+    {
+        if (value is null)
+        {
+            writer.WriteNullObjectHeader();
+            return;
+        }
+
+        // Write object header
+        writer.WriteObjectHeader(1);
+
+        // Get the address bytes and write as byte array
+        // IPv4: 4 bytes, IPv6: 16 bytes
+        Span<byte> addressBytes = stackalloc byte[16];
+        // false: only if the destination is not long enough
+        value.TryWriteBytes(addressBytes, out int bytesWritten);
+        writer.WriteSpan(addressBytes[..bytesWritten]);
+    }
+
+    public void Deserialize(ref MemoryPackReader reader, scoped ref IPAddress? value)
+    {
+        if (!reader.TryReadObjectHeader(out var count))
+        {
+            value = null;
+            return;
+        }
+
+        if (count != 1)
+        {
+            MemoryPackSerializationException.ThrowInvalidPropertyCount(typeof(IPAddress), 1, count);
+            return;
+        }
+
+        // Read the byte array
+        var addressBytes = reader.ReadArray<byte>();
+
+        if (addressBytes is null)
+        {
+            value = null;
+            return;
+        }
+
+        // Construct IPAddress from bytes
+        value = new IPAddress(addressBytes);
+    }
+
+    public override IMemoryPackFormatter<IPAddress> GetFormatter() => this;
 }
 
 /// <summary>
@@ -150,17 +240,38 @@ public readonly struct BloodBonus(long init = BloodBonus.DefaultValue)
         return new(value);
     }
 
-    public long FirstBlood => (Val >> 20) & 0x3ff;
+    public long FirstBlood
+    {
+        get => (Val >> 20) & 0x3ff;
+    }
 
-    public float FirstBloodFactor => FirstBlood / 1000f + 1.0f;
+    public float FirstBloodFactor
+    {
+        get => FirstBlood / 1000f + 1.0f;
+    }
 
-    public long SecondBlood => (Val >> 10) & 0x3ff;
+    public long SecondBlood
+    {
+        get => (Val >> 10) & 0x3ff;
+    }
 
-    public float SecondBloodFactor => SecondBlood / 1000f + 1.0f;
+    public float SecondBloodFactor
+    {
+        get => SecondBlood / 1000f + 1.0f;
+    }
 
-    public long ThirdBlood => Val & 0x3ff;
+    public long ThirdBlood
+    {
+        get => Val & 0x3ff;
+    }
 
-    public float ThirdBloodFactor => ThirdBlood / 1000f + 1.0f;
+    public float ThirdBloodFactor
+    {
+        get => ThirdBlood / 1000f + 1.0f;
+    }
 
-    public bool NoBonus => Val == 0;
+    public bool NoBonus
+    {
+        get => Val == 0;
+    }
 }
